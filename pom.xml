@@ -10,6 +10,11 @@
 
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -67,10 +72,8 @@
 					<groupId>commons-codec</groupId>
 					<artifactId>commons-codec</artifactId>
 				</exclusion>
-				<!-- exclusion>
-					<groupId>com.github.jsonld-java</groupId>
-					<artifactId>jsonld-java-sesame</artifactId>
-				</exclusion-->
+				<!-- exclusion> <groupId>com.github.jsonld-java</groupId> <artifactId>jsonld-java-sesame</artifactId> 
+					</exclusion -->
 				<exclusion>
 					<groupId>commons-io</groupId>
 					<artifactId>commons-io</artifactId>
@@ -117,8 +120,8 @@
 			<artifactId>lgu.commons.semanticweb</artifactId>
 			<version>0.0.3</version>
 		</dependency>
-		
-		
+
+
 
 	</dependencies>
 </project>
