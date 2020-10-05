@@ -64,10 +64,14 @@ lastTimestampFile=${tmp}timestamp
 
 ```
 
-## Usage
+### Usage
 
 You can run RDF Uploader using maven as follows:
 
 ```
 mvn exec:java -Dexec.mainClass="eu.spice.rdfuploader.RDFUploader"
 ```
+
+### License
+
+RDF Uploader is distributed under [Apache 2.0 license][LICENSE]
