@@ -45,7 +45,7 @@ public class ActivityLogWatchdog implements Runnable {
 	private static final Logger logger = LogManager.getLogger(ActivityLogWatchdog.class);
 
 	private String password, username, apif_host, lastTimestampFile, apif_uri_scheme, activity_log_path, baseNS,
-			repositoryURL, blazegraphPropertiesFilepath, baseResource, baseGraph, ontologyURIPRefix;
+			repositoryURL, baseResource, baseGraph, ontologyURIPRefix;
 
 	private boolean useNamedresources = true;
 
@@ -91,7 +91,6 @@ public class ActivityLogWatchdog implements Runnable {
 		activity_log_path = c.getActivity_log_path();
 		baseNS = c.getBaseNS();
 		repositoryURL = c.getRepositoryURL();
-		blazegraphPropertiesFilepath = c.getBlazegraphPropertiesFilepath();
 		baseResource = c.getBaseResource();
 		baseGraph = c.getBaseGraph();
 		ontologyURIPRefix = c.getOntologyURIPRefix();

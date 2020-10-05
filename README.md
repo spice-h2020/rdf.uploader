@@ -12,6 +12,8 @@ cd rdf.uploader/
 mvn clean install
 ```
 
+Before running RDF Uploader make sure that [json2rdf](https://github.com/spice-h2020/json2rdf) is installed on your machine.
+
 ### Configuration
 
 Before running the RDF Uploader set the configuration file available at ``src/main/resources/config.properties`` 
@@ -29,7 +31,7 @@ apif_uri_scheme=http
 ## Path for querying the activity_log 
 activity_log_path=/object/activity_log
 
-## Namespace for the resources retrieved from the activity_log dataset
+## Namespace to use as base for the resources retrieved from the activity_log dataset
 baseNS=http://spice-apif.local/object/activity_log/
 
 ## URL of the Blazegraph repository
@@ -53,10 +55,10 @@ useNamedresources=true
 ## Maximum number of upload/update/delete requests that will be kept in memory
 requestQueueSize=100
 
-## Number of seconds between two API lookup
+## Number of seconds between two API factory lookups
 lookupRateSeconds=10
 
-## Path to a temporary that will be created
+## Path to a temporary folder that will be created
 tmpFolder=tmp
 
 ## Path to file containing the timestamp of the last request accomplished
