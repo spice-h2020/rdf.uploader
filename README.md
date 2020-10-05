@@ -60,7 +60,7 @@ lookupRateSeconds=10
 tmpFolder=tmp
 
 ## Path to file containing the timestamp of the last request accomplished
-lastTimestampFile=${tmp}timestamp
+lastTimestampFile=${tmpFolder}/timestamp
 
 ```
 
