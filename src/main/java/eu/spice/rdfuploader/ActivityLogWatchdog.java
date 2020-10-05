@@ -82,7 +82,7 @@ public class ActivityLogWatchdog implements Runnable {
 	}
 
 	private void init(RDFUploaderConfiguration c) throws IOException {
-		blazegraphProperties = Utils.loadProperties(blazegraphPropertiesFilepath);
+		blazegraphProperties = Utils.loadProperties(c.getBlazegraphPropertiesFilepath());
 		username = c.getUsername();
 		password = c.getPassword();
 		apif_host = c.getApif_host();
