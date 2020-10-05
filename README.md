@@ -7,7 +7,6 @@ The RDF Uplodaer aims at transforming and uploading JSON documents  shared via O
 You can install RDF Uploader using maven as follows:
 
 ```
-
 mvn clean install
 ```
 
