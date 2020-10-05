@@ -63,3 +63,11 @@ tmpFolder=tmp
 lastTimestampFile=${tmp}timestamp
 
 ```
+
+## Usage
+
+You can run RDF Uploader using maven as follows:
+
+```
+mvn exec:java -Dexec.mainClass="eu.spice.rdfuploader.RDFUploader"
+```
