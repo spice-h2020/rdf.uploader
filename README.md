@@ -2,9 +2,9 @@
 
 The RDF Uplodaer aims at transforming and uploading JSON documents shared via Object Stream API.
 
-### Installation
+### Compilation
 
-You can install RDF Uploader using maven as follows:
+You can compile RDF Uploader using maven as follows:
 
 ```
 git clone https://github.com/spice-h2020/rdf.uploader.git
@@ -73,6 +73,14 @@ You can run RDF Uploader using maven as follows:
 ```
 mvn exec:java -Dexec.mainClass="eu.spice.rdfuploader.RDFUploader"
 ```
+
+Or, you can run the JAR file ``spice.rdf-uploader.jar`` located in the ``target/`` directory as follows
+
+```
+java -jar spice.rdf-uploader.jar
+```
+
+RDF Uploader assumes that the configuration file is located at ``./config.properties``.
 
 ### License
 
