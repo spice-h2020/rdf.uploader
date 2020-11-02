@@ -1,6 +1,6 @@
 # RDF Uploader
 
-The RDF Uplodaer aims at transforming and uploading JSON documents shared via Object Stream API.
+The RDF Uploader aims at transforming and uploading JSON documents shared via Object Stream API.
 
 ### Compilation
 
