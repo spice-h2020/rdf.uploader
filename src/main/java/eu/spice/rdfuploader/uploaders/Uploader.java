@@ -16,8 +16,8 @@ import org.openrdf.rio.RDFFormat;
 
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
+import com.github.spiceh2020.json2rdf.transformers.JSONTransformer;
 
-import eu.spice.json2rdf.transformers.JSONTransformer;
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestCreate;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestDelete;
@@ -76,12 +76,12 @@ public class Uploader implements Runnable {
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(r.getRepositoryURL());
 		RemoteRepository rr = Utils.createAndGetRemoteRepositoryForNamespace(manager, r.getNamespace(),
 				r.getNamespaceProperties());
-		
+
 		Model m = ModelFactory.createDefaultModel();
 		logger.trace("Reading as JSON-LD");
 		RDFDataMgr.read(m, new StringReader(r.getPayload().toString()), "", Lang.JSONLD);
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
-		if(m.size()==0) {
+		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
 			m = jt.getModel(r.getPayload());
 			logger.trace("Read " + m.size() + " triples from JSON!");
@@ -114,17 +114,16 @@ public class Uploader implements Runnable {
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(r.getRepositoryURL());
 		RemoteRepository rr = Utils.createAndGetRemoteRepositoryForNamespace(manager, r.getNamespace(),
 				r.getNamespaceProperties());
-		
+
 		Model m = ModelFactory.createDefaultModel();
 		logger.trace("Reading as JSON-LD");
 		RDFDataMgr.read(m, new StringReader(r.getPayload().toString()), "", Lang.JSONLD);
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
-		if(m.size()==0) {
+		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
 			m = jt.getModel(r.getPayload());
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
-		
 
 		String rdfFile = tmpFolder + "/" + System.nanoTime() + ".rdf";
 		m.write(new FileOutputStream(new File(rdfFile)));
