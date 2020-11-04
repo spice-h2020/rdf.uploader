@@ -31,6 +31,7 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.spice.rdfuploader.uploaders.Utils;
@@ -107,34 +108,10 @@ public class ActivityLogWatchdog implements Runnable {
 		}
 		logger.trace("Last timestamp " + lastTimestamp);
 
-		CredentialsProvider provider = new BasicCredentialsProvider();
-		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
-		provider.setCredentials(AuthScope.ANY, credentials);
-		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-
-		HttpResponse response;
 		try {
-
-			URIBuilder builder = new URIBuilder();
-			builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath(activity_log_path);
-
-			if (lastTimestamp != null) {
-				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp + "  }}");
-			}
-
-			response = client.execute(new HttpGet(builder.build()));
-			BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-			String l;
-			StringBuilder sb = new StringBuilder();
-			while ((l = br.readLine()) != null) {
-				sb.append(l);
-			}
-
-			Model m = ModelFactory.createDefaultModel();
-			RDFDataMgr.read(m, new StringReader(sb.toString()), baseNS, Lang.JSONLD);
+			Model m = getActivityLogEntitiesFromBrowse(lastTimestamp);
 			QueryExecution qexec = QueryExecutionFactory.create(getLastOperationsQuery, m);
 			ResultSet rs = qexec.execSelect();
-//			System.out.println(ResultSetFormatter.asText(rs));
 			while (rs.hasNext()) {
 				QuerySolution qs = rs.next();
 				lastTimestamp = qs.get("timestamp").asLiteral().getInt();
@@ -185,7 +162,7 @@ public class ActivityLogWatchdog implements Runnable {
 
 			saveLastTimestamp(lastTimestamp);
 
-		} catch (IOException | URISyntaxException | InterruptedException e) {
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -220,6 +197,64 @@ public class ActivityLogWatchdog implements Runnable {
 		FileOutputStream fos = new FileOutputStream(timestampFile);
 		fos.write((timestamp + "\n").getBytes());
 		fos.close();
+	}
+
+	private Model getActivityLogEntitiesFromBrowse(Integer lastTimestamp) {
+
+		Model m = ModelFactory.createDefaultModel();
+
+		CredentialsProvider provider = new BasicCredentialsProvider();
+		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+		provider.setCredentials(AuthScope.ANY, credentials);
+		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
+		HttpResponse response;
+		try {
+
+			URIBuilder builder = new URIBuilder();
+			builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath(activity_log_path);
+
+			if (lastTimestamp != null) {
+				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp + "  }}");
+			}
+
+			builder.setParameter("pagesize", "100");
+
+			// FIXME
+			builder.setParameter("limit", "10000");
+
+			int pageNumber = 1;
+
+			while (true) {
+				logger.trace("Page number " + pageNumber);
+				builder.setParameter("page", pageNumber + "");
+				response = client.execute(new HttpGet(builder.build()));
+				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+
+				String l;
+				StringBuilder sb = new StringBuilder();
+				while ((l = br.readLine()) != null) {
+					sb.append(l);
+				}
+
+				JSONObject objectResponse = new JSONObject(sb.toString());
+				logger.trace("Document  count " + objectResponse.getInt("documentCount"));
+				JSONArray results = objectResponse.getJSONArray("results");
+				logger.trace("Dimension results " + results.length());
+				if (results.length() > 0) {
+					RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
+				} else {
+					break;
+				}
+				pageNumber++;
+			}
+
+		} catch (IOException | URISyntaxException e) {
+			e.printStackTrace();
+		}
+
+		return m;
+
 	}
 
 }

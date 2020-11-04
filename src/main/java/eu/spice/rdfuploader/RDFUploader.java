@@ -30,7 +30,7 @@ public class RDFUploader {
 		Thread t = new Thread(up);
 		t.start();
 		ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
-		ses.scheduleAtFixedRate(new ActivityLogWatchdog(c, requests), 60, c.getLookupRateSeconds(), TimeUnit.SECONDS);
+		ses.scheduleAtFixedRate(new ActivityLogWatchdog(c, requests), 0, c.getLookupRateSeconds(), TimeUnit.SECONDS);
 
 //		up.stop();
 		t.join();
