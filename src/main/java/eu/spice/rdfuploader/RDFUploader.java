@@ -26,11 +26,11 @@ public class RDFUploader {
 		new File(tmpFolder).mkdir();
 		Uploader up = new Uploader(requests, tmpFolder);
 
-		logger.info("The activity log watchdog will start in 60 secs.");
+		logger.info("The activity log watchdog will start in 30 secs.");
 		Thread t = new Thread(up);
 		t.start();
 		ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
-		ses.scheduleAtFixedRate(new ActivityLogWatchdog(c, requests), 0, c.getLookupRateSeconds(), TimeUnit.SECONDS);
+		ses.scheduleAtFixedRate(new ActivityLogWatchdog(c, requests), 30, c.getLookupRateSeconds(), TimeUnit.SECONDS);
 
 //		up.stop();
 		t.join();
