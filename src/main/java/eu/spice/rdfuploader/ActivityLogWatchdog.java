@@ -238,9 +238,9 @@ public class ActivityLogWatchdog implements Runnable {
 				}
 
 				JSONObject objectResponse = new JSONObject(sb.toString());
-				logger.trace("Document  count " + objectResponse.getInt("documentCount"));
 				JSONArray results = objectResponse.getJSONArray("results");
-				logger.trace("Dimension results " + results.length());
+				logger.trace("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
+						+ results.length());
 				if (results.length() > 0) {
 					RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
 				} else {
