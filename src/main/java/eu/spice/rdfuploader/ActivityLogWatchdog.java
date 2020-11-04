@@ -215,13 +215,14 @@ public class ActivityLogWatchdog implements Runnable {
 			builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath(activity_log_path);
 
 			if (lastTimestamp != null) {
-				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp + "  }}");
+				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp
+						+ "  }, \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
 			}
 
 			builder.setParameter("pagesize", "100");
 
 			// FIXME
-			builder.setParameter("limit", "10000");
+			builder.setParameter("limit", "100000");
 
 			int pageNumber = 1;
 
