@@ -64,6 +64,9 @@ tmpFolder=tmp
 ## Path to file containing the timestamp of the last request accomplished
 lastTimestampFile=${tmpFolder}/timestamp
 
+## Prefix of the blazegraph namespaces that will be created
+blazegraphNamespacePrefix=spice_
+
 ```
 
 ### Usage

@@ -46,7 +46,7 @@ public class ActivityLogWatchdog implements Runnable {
 	private static final Logger logger = LogManager.getLogger(ActivityLogWatchdog.class);
 
 	private String password, username, apif_host, lastTimestampFile, apif_uri_scheme, activity_log_path, baseNS,
-			repositoryURL, baseResource, baseGraph, ontologyURIPRefix;
+			repositoryURL, baseResource, baseGraph, ontologyURIPRefix, blazegraphNamespacePrefix;
 
 	private boolean useNamedresources = true;
 
@@ -96,6 +96,7 @@ public class ActivityLogWatchdog implements Runnable {
 		baseGraph = c.getBaseGraph();
 		ontologyURIPRefix = c.getOntologyURIPRefix();
 		useNamedresources = c.isUseNamedresources();
+		blazegraphNamespacePrefix = c.getBlazegraphNamespacePrefix();
 	}
 
 	@Override
@@ -117,22 +118,24 @@ public class ActivityLogWatchdog implements Runnable {
 				lastTimestamp = qs.get("timestamp").asLiteral().getInt();
 				logger.trace("Processing " + qs.get("operationType").asResource().getLocalName() + " operation "
 						+ qs.get("ale").asResource().getLocalName() + " with timestamp " + lastTimestamp);
-				String datasetId = qs.get("datasetId").asLiteral().getString();
+				String datasetIdentifier = qs.get("datasetId").asLiteral().getString();
+				String blazegraphNamespace = blazegraphNamespacePrefix + datasetIdentifier;
 
 				Resource operationType = qs.get("operationType").asResource();
 				if (operationType.equals(CREATE_DATASET)) {
 					logger.trace("Create Dataset");
-					this.requests.put(new CreateNamespaceRequest(datasetId, repositoryURL, blazegraphProperties));
+					this.requests
+							.put(new CreateNamespaceRequest(blazegraphNamespace, repositoryURL, blazegraphProperties));
 				} else if (operationType.equals(CREATE)) {
 					logger.trace("Create Document");
 					String payload = qs.get("payload").asLiteral().getString();
 					String docId = qs.get("docId").asLiteral().getString();
-					JSONRequestCreate request = new JSONRequestCreate(datasetId, repositoryURL,
-							getGraphURI(datasetId, docId), blazegraphProperties, new JSONObject(payload),
-							getOntologyURIPrefix(datasetId, docId));
+					JSONRequestCreate request = new JSONRequestCreate(blazegraphNamespace, repositoryURL,
+							getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
+							getOntologyURIPrefix(datasetIdentifier, docId));
 					if (useNamedresources) {
 						logger.trace("Use named resources");
-						request.setRootResourceURI(getRootURI(datasetId, docId));
+						request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
 					}
 					this.requests.put(request);
 				} else if (operationType.equals(DELETE)) {
@@ -141,19 +144,19 @@ public class ActivityLogWatchdog implements Runnable {
 					String endpoint = qs.get("endpoint").asLiteral().getString();
 					String[] split = endpoint.split("/");
 					String docId = split[split.length - 1];
-					this.requests.put(new JSONRequestDelete(datasetId, repositoryURL, getGraphURI(datasetId, docId),
-							blazegraphProperties));
+					this.requests.put(new JSONRequestDelete(blazegraphNamespace, repositoryURL,
+							getGraphURI(datasetIdentifier, docId), blazegraphProperties));
 					logger.trace(this.requests.size());
 				} else if (operationType.equals(UPDATE)) {
 					logger.trace("Update Document");
 					String payload = qs.get("payload").asLiteral().getString();
 					String docId = qs.get("docId").asLiteral().getString();
-					JSONRequestUpdate request = new JSONRequestUpdate(datasetId, repositoryURL,
-							getGraphURI(datasetId, docId), blazegraphProperties, new JSONObject(payload),
-							getOntologyURIPrefix(datasetId, docId));
+					JSONRequestUpdate request = new JSONRequestUpdate(blazegraphNamespace, repositoryURL,
+							getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
+							getOntologyURIPrefix(datasetIdentifier, docId));
 					if (useNamedresources) {
 						logger.trace("Use named resources");
-						request.setRootResourceURI(getRootURI(datasetId, docId));
+						request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
 					}
 					this.requests.put(request);
 				}
@@ -217,6 +220,8 @@ public class ActivityLogWatchdog implements Runnable {
 			if (lastTimestamp != null) {
 				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp
 						+ "  }, \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
+			}else {
+				builder.setParameter("query", "{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
 			}
 
 			builder.setParameter("pagesize", "100");

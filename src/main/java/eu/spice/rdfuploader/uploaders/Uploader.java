@@ -96,11 +96,13 @@ public class Uploader implements Runnable {
 							RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.RDFXML, ""),
 							r.getGraphURI()));
 			rr.add(new RemoteRepository.AddOp(new File(nqFile), RDFFormat.NQUADS));
+			new File(nqFile).delete();
 		} else {
 			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.RDFXML));
 		}
 		manager.close();
 		m.close();
+		new File(rdfFile).delete();
 		logger.trace("Create Dataset Request - Accomplished");
 	}
 
@@ -136,6 +138,7 @@ public class Uploader implements Runnable {
 
 			rr.prepareUpdate("CLEAR GRAPH <" + r.getGraphURI() + ">").evaluate();
 			rr.add(new RemoteRepository.AddOp(new File(nqFile), RDFFormat.NQUADS));
+			new File(nqFile).delete();
 
 		} else {
 			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.RDFXML));
@@ -143,6 +146,7 @@ public class Uploader implements Runnable {
 		manager.close();
 		m.close();
 		logger.trace("Update Dataset Request - Accomplished");
+		new File(rdfFile).delete();
 	}
 
 	private void accomplishRequest(JSONRequestDelete r) throws Exception {
