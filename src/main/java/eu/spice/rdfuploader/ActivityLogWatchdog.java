@@ -226,9 +226,6 @@ public class ActivityLogWatchdog implements Runnable {
 
 			builder.setParameter("pagesize", "100");
 
-			// FIXME
-			builder.setParameter("limit", "100000");
-
 			int pageNumber = 1;
 
 			while (true) {

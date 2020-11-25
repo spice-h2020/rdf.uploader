@@ -5,7 +5,7 @@
 
 	<groupId>eu.spice</groupId>
 	<artifactId>rdf.uploader</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2 </version>
 	<packaging>jar</packaging>
 
 	<build>
@@ -37,7 +37,7 @@
 					<execution>
 						<id>rdf-uploader</id>
 						<configuration>
-							<outputFile>target/spice.rdf-uploader.jar</outputFile>
+							<outputFile>target/spice.rdf-uploader-${version}.jar</outputFile>
 							<shadedArtifactAttached>false</shadedArtifactAttached>
 							<transformers>
 								<transformer
