@@ -16,6 +16,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -56,6 +57,8 @@ public class ActivityLogWatchdog implements Runnable {
 			CREATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Create"),
 			UPDATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Update"),
 			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete");
+	
+	private static final int TIMEOUT = 10000;
 
 	//@f:off
 	private static String getLastOperationsQuery =
@@ -210,6 +213,12 @@ public class ActivityLogWatchdog implements Runnable {
 		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
 		provider.setCredentials(AuthScope.ANY, credentials);
 		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+		
+		RequestConfig requestConfig = RequestConfig.custom()
+		        .setSocketTimeout(TIMEOUT)
+		        .setConnectTimeout(TIMEOUT)
+		        .setConnectionRequestTimeout(TIMEOUT)
+		        .build();
 
 		HttpResponse response;
 		try {
@@ -229,9 +238,12 @@ public class ActivityLogWatchdog implements Runnable {
 			int pageNumber = 1;
 
 			while (true) {
+				
 				logger.trace("Page number " + pageNumber);
 				builder.setParameter("page", pageNumber + "");
-				response = client.execute(new HttpGet(builder.build()));
+				HttpGet getRequest = new HttpGet(builder.build());
+				getRequest.setConfig(requestConfig);
+				response = client.execute(getRequest);
 				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
 				String l;
@@ -241,6 +253,9 @@ public class ActivityLogWatchdog implements Runnable {
 				}
 
 				JSONObject objectResponse = new JSONObject(sb.toString());
+				if(objectResponse.has("error")) {
+					logger.error(objectResponse.getString("error"));
+				}
 				JSONArray results = objectResponse.getJSONArray("results");
 				logger.trace("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
 						+ results.length());
@@ -253,6 +268,7 @@ public class ActivityLogWatchdog implements Runnable {
 			}
 
 		} catch (IOException | URISyntaxException e) {
+			logger.error(e.getMessage());
 			e.printStackTrace();
 		}
 
