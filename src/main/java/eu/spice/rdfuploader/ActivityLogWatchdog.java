@@ -16,6 +16,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -56,6 +57,8 @@ public class ActivityLogWatchdog implements Runnable {
 			CREATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Create"),
 			UPDATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Update"),
 			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete");
+	
+	private static final int TIMEOUT = 10000;
 
 	//@f:off
 	private static String getLastOperationsQuery =
@@ -215,7 +218,13 @@ public class ActivityLogWatchdog implements Runnable {
 		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
 		provider.setCredentials(AuthScope.ANY, credentials);
 		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
 		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom()
+		        .setSocketTimeout(TIMEOUT)
+		        .setConnectTimeout(TIMEOUT)
+		        .setConnectionRequestTimeout(TIMEOUT)
+		        .build();
 		HttpResponse response;
 		try {
 
@@ -236,7 +245,9 @@ public class ActivityLogWatchdog implements Runnable {
 			while (true) {
 				logger.trace("Calling page number " + pageNumber);
 				builder.setParameter("page", pageNumber + "");
-				response = client.execute(new HttpGet(builder.build()));
+				HttpGet getRequest = new HttpGet(builder.build());
+				getRequest.setConfig(requestConfig);
+				response = client.execute(getRequest);
 				logger.trace("Response: " + response.getStatusLine().toString()); // FIXME Use slf4j instead!
 				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
@@ -245,9 +256,11 @@ public class ActivityLogWatchdog implements Runnable {
 				while ((l = br.readLine()) != null) {
 					sb.append(l);
 				}
-				String content = sb.toString();
-				logger.trace(content);
-				JSONObject objectResponse = new JSONObject(content);
+
+				JSONObject objectResponse = new JSONObject(sb.toString());
+				if(objectResponse.has("error")) {
+					logger.error(objectResponse.getString("error"));
+				}
 				logger.trace("Response content");
 				JSONArray results = objectResponse.getJSONArray("results");
 
@@ -264,7 +277,7 @@ public class ActivityLogWatchdog implements Runnable {
 		} catch (IOException | URISyntaxException e) {
 			logger.error(e);
 		}
-
+		
 		return m;
 
 	}
