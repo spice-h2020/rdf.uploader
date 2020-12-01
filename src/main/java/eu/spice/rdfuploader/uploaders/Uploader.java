@@ -67,7 +67,7 @@ public class Uploader implements Runnable {
 	}
 
 	private void accomplishRequest(JSONRequestCreate r) throws Exception {
-		logger.trace("Create Dataset Request");
+		logger.debug("Create Dataset Request");
 		JSONTransformer jt = new JSONTransformer(r.getOntologyURIPrefix());
 		if (r.getRootResourceURI() != null) {
 			logger.trace("Setting root URI");
@@ -107,7 +107,7 @@ public class Uploader implements Runnable {
 	}
 
 	private void accomplishRequest(JSONRequestUpdate r) throws Exception {
-		logger.trace("Update Dataset Request");
+		logger.debug("Update Dataset Request");
 		JSONTransformer jt = new JSONTransformer(r.getOntologyURIPrefix());
 		if (r.getRootResourceURI() != null) {
 			logger.trace("Setting root URI");
@@ -150,7 +150,7 @@ public class Uploader implements Runnable {
 	}
 
 	private void accomplishRequest(JSONRequestDelete r) throws Exception {
-		logger.trace("CLEAR graph " + r.getGraphURI());
+		logger.debug("CLEAR graph " + r.getGraphURI());
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(r.getRepositoryURL());
 		RemoteRepository rr = Utils.createAndGetRemoteRepositoryForNamespace(manager, r.getNamespace(),
 				r.getNamespaceProperties());
@@ -160,7 +160,7 @@ public class Uploader implements Runnable {
 	}
 
 	private void accomplishRequest(CreateNamespaceRequest r) throws Exception {
-		logger.trace("Create Namespace Request");
+		logger.debug("Create Namespace Request");
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(r.getRepositoryURL());
 		Utils.createAndGetRemoteRepositoryForNamespace(manager, r.getNamespace(), r.getNamespaceProperties());
 		manager.close();

@@ -249,12 +249,12 @@ public class ActivityLogWatchdog implements Runnable {
 			int pageNumber = 1;
 			logger.trace("Start browsing");
 			while (true) {
-				logger.trace("Calling page number " + pageNumber);
+				logger.debug("Calling page number " + pageNumber);
 				builder.setParameter("page", pageNumber + "");
 				HttpGet getRequest = new HttpGet(builder.build());
 				getRequest.setConfig(requestConfig);
 				response = client.execute(getRequest);
-				logger.trace("Response: " + response.getStatusLine().toString()); // FIXME Use slf4j instead!
+				logger.debug("Response: " + response.getStatusLine().toString()); // FIXME Use slf4j instead!
 				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
 				String l;
@@ -270,7 +270,7 @@ public class ActivityLogWatchdog implements Runnable {
 				logger.trace("Response content");
 				JSONArray results = objectResponse.getJSONArray("results");
 
-				logger.trace("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
+				logger.debug("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
 						+ results.length());
 				if (results.length() > 0) {
 					RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
