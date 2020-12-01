@@ -196,9 +196,15 @@ public class ActivityLogWatchdog implements Runnable {
 			String line = br.readLine();
 			br.close();
 			if (line != null) {
-				return Integer.parseInt(line);
+				// If the file is corrupted this should throw a NumberFormatException
+				try {
+					return Integer.parseInt(line);
+				}catch(NumberFormatException e11){
+					logger.error("Corrupted timestamp file (ignored)");
+				}
 			}
 		}
+		logger.trace("Last timestamp is null");
 		return null;
 	}
 
@@ -277,7 +283,7 @@ public class ActivityLogWatchdog implements Runnable {
 		} catch (IOException | URISyntaxException e) {
 			logger.error(e);
 		}
-		
+
 		return m;
 
 	}
