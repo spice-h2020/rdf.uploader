@@ -8,6 +8,10 @@
 	<version>0.0.4-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
@@ -37,7 +41,7 @@
 					<execution>
 						<id>rdf-uploader</id>
 						<configuration>
-							<outputFile>target/spice.rdf-uploader-${version}.jar</outputFile>
+							<outputFile>target/spice.rdf-uploader-${project.version}.jar</outputFile>
 							<shadedArtifactAttached>false</shadedArtifactAttached>
 							<transformers>
 								<transformer
