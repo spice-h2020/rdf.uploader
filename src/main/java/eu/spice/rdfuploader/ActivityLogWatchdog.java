@@ -57,7 +57,7 @@ public class ActivityLogWatchdog implements Runnable {
 			CREATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Create"),
 			UPDATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Update"),
 			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete");
-	
+
 	private static final int TIMEOUT = 10000;
 
 	//@f:off
@@ -213,12 +213,9 @@ public class ActivityLogWatchdog implements Runnable {
 		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
 		provider.setCredentials(AuthScope.ANY, credentials);
 		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-		
-		RequestConfig requestConfig = RequestConfig.custom()
-		        .setSocketTimeout(TIMEOUT)
-		        .setConnectTimeout(TIMEOUT)
-		        .setConnectionRequestTimeout(TIMEOUT)
-		        .build();
+
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
 
 		HttpResponse response;
 		try {
@@ -229,8 +226,9 @@ public class ActivityLogWatchdog implements Runnable {
 			if (lastTimestamp != null) {
 				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp
 						+ "  }, \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
-			}else {
-				builder.setParameter("query", "{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
+			} else {
+				builder.setParameter("query",
+						"{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
 			}
 
 			builder.setParameter("pagesize", "100");
@@ -238,8 +236,8 @@ public class ActivityLogWatchdog implements Runnable {
 			int pageNumber = 1;
 
 			while (true) {
-				
-				logger.trace("Page number " + pageNumber);
+
+				logger.trace("Issuing Request for Page " + pageNumber + " from " + activity_log_path);
 				builder.setParameter("page", pageNumber + "");
 				HttpGet getRequest = new HttpGet(builder.build());
 				getRequest.setConfig(requestConfig);
@@ -253,7 +251,7 @@ public class ActivityLogWatchdog implements Runnable {
 				}
 
 				JSONObject objectResponse = new JSONObject(sb.toString());
-				if(objectResponse.has("error")) {
+				if (objectResponse.has("error")) {
 					logger.error(objectResponse.getString("error"));
 				}
 				JSONArray results = objectResponse.getJSONArray("results");
