@@ -5,12 +5,8 @@
 
 	<groupId>eu.spice</groupId>
 	<artifactId>rdf.uploader</artifactId>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.3</version>
 	<packaging>jar</packaging>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
@@ -41,7 +37,7 @@
 					<execution>
 						<id>rdf-uploader</id>
 						<configuration>
-							<outputFile>target/spice.rdf-uploader-${project.version}.jar</outputFile>
+							<outputFile>target/spice.rdf-uploader-${version}.jar</outputFile>
 							<shadedArtifactAttached>false</shadedArtifactAttached>
 							<transformers>
 								<transformer
@@ -86,7 +82,7 @@
 		<dependency>
 			<groupId>com.github.spice-h2020</groupId>
 			<artifactId>json2rdf</artifactId>
-			<version>0.0.4</version>
+			<version>0.0.7</version>
 			<exclusions>
 				<exclusion>
 					<groupId>commons-cli</groupId>
