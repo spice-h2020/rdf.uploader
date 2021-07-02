@@ -81,11 +81,13 @@ public class ActivityLogWatchdog implements Runnable {
 	private Properties blazegraphProperties;
 
 	public ActivityLogWatchdog(RDFUploaderConfiguration c, BlockingQueue<Request> requests) throws IOException {
+		logger.trace("constructor invoked");
 		this.requests = requests;
 		init(c);
 	}
 
 	private void init(RDFUploaderConfiguration c) throws IOException {
+		logger.trace("init invoked");
 		blazegraphProperties = Utils.loadProperties(c.getBlazegraphPropertiesFilepath());
 		username = c.getUsername();
 		password = c.getPassword();
@@ -104,11 +106,12 @@ public class ActivityLogWatchdog implements Runnable {
 
 	@Override
 	public void run() {
+		logger.trace("Method run() invoked");
 		Integer lastTimestamp = null;
 		try {
 			lastTimestamp = getLastTimestamp();
 		} catch (IOException e1) {
-			e1.printStackTrace();
+			logger.error("Exception while getting last timestamp", e1);
 		}
 		logger.trace("Last timestamp " + lastTimestamp);
 
@@ -169,7 +172,7 @@ public class ActivityLogWatchdog implements Runnable {
 			saveLastTimestamp(lastTimestamp);
 
 		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
+			logger.error("Exception while querying the activity log", e);
 		}
 	}
 
@@ -186,19 +189,27 @@ public class ActivityLogWatchdog implements Runnable {
 	}
 
 	private Integer getLastTimestamp() throws IOException {
+		logger.trace("Method getLastTimestamp invoked");
 		File timestamp = new File(lastTimestampFile);
 		if (timestamp.exists()) {
 			BufferedReader br = new BufferedReader(new FileReader(timestamp));
 			String line = br.readLine();
 			br.close();
 			if (line != null) {
-				return Integer.parseInt(line);
+				// If the file is corrupted this should throw a NumberFormatException
+				try {
+					return Integer.parseInt(line);
+				}catch(NumberFormatException e11){
+					logger.error("Corrupted timestamp file (ignored)");
+				}
 			}
 		}
+		logger.trace("Last timestamp is null");
 		return null;
 	}
 
 	private void saveLastTimestamp(Integer timestamp) throws IOException {
+		logger.trace("Method saveLastTimestamp invoked");
 		File timestampFile = new File(lastTimestampFile);
 		FileOutputStream fos = new FileOutputStream(timestampFile);
 		fos.write((timestamp + "\n").getBytes());
@@ -206,7 +217,7 @@ public class ActivityLogWatchdog implements Runnable {
 	}
 
 	private Model getActivityLogEntitiesFromBrowse(Integer lastTimestamp) {
-
+		logger.trace("Method getActivityLogEntitiesFromBrowse invoked");
 		Model m = ModelFactory.createDefaultModel();
 
 		CredentialsProvider provider = new BasicCredentialsProvider();
@@ -214,9 +225,12 @@ public class ActivityLogWatchdog implements Runnable {
 		provider.setCredentials(AuthScope.ANY, credentials);
 		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
 
-		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
-				.setConnectionRequestTimeout(TIMEOUT).build();
-
+		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom()
+		        .setSocketTimeout(TIMEOUT)
+		        .setConnectTimeout(TIMEOUT)
+		        .setConnectionRequestTimeout(TIMEOUT)
+		        .build();
 		HttpResponse response;
 		try {
 
@@ -234,14 +248,16 @@ public class ActivityLogWatchdog implements Runnable {
 			builder.setParameter("pagesize", "100");
 
 			int pageNumber = 1;
-
+			logger.trace("Start browsing");
 			while (true) {
 
-				logger.trace("Issuing Request for Page " + pageNumber + " from " + activity_log_path);
+				logger.debug("Calling page number " + pageNumber);
+
 				builder.setParameter("page", pageNumber + "");
 				HttpGet getRequest = new HttpGet(builder.build());
 				getRequest.setConfig(requestConfig);
 				response = client.execute(getRequest);
+				logger.debug("Response: " + response.getStatusLine().toString()); // FIXME Use slf4j instead!
 				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
 				String l;
@@ -254,8 +270,10 @@ public class ActivityLogWatchdog implements Runnable {
 				if (objectResponse.has("error")) {
 					logger.error(objectResponse.getString("error"));
 				}
+				logger.trace("Response content");
 				JSONArray results = objectResponse.getJSONArray("results");
-				logger.trace("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
+
+				logger.debug("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
 						+ results.length());
 				if (results.length() > 0) {
 					RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
@@ -266,8 +284,7 @@ public class ActivityLogWatchdog implements Runnable {
 			}
 
 		} catch (IOException | URISyntaxException e) {
-			logger.error(e.getMessage());
-			e.printStackTrace();
+			logger.error(e);
 		}
 
 		return m;
