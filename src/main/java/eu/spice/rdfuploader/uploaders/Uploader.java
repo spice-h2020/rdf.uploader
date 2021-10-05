@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.StringReader;
+import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 
 import org.apache.jena.rdf.model.Model;
@@ -16,7 +17,9 @@ import org.openrdf.rio.RDFFormat;
 
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
-import com.github.spiceh2020.json2rdf.transformers.JSONTransformer;
+import com.github.sparqlanything.json.JSONTriplifier;
+import com.github.sparqlanything.model.BaseFacadeXBuilder;
+import com.github.sparqlanything.model.IRIArgument;
 
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestCreate;
@@ -68,10 +71,16 @@ public class Uploader implements Runnable {
 
 	private void accomplishRequest(JSONRequestCreate r) throws Exception {
 		logger.debug("Create Dataset Request");
-		JSONTransformer jt = new JSONTransformer(r.getOntologyURIPrefix());
+		JSONTriplifier jt = new JSONTriplifier();
+//		JSONTransformer jt = new JSONTransformer(r.getOntologyURIPrefix());
+		Properties p = new Properties();
+		p.setProperty(IRIArgument.CONTENT.toString(), r.getPayload().toString());
+		p.setProperty(IRIArgument.NAMESPACE.toString(), r.getOntologyURIPrefix());
 		if (r.getRootResourceURI() != null) {
 			logger.trace("Setting root URI");
-			jt.setURIRoot(r.getRootResourceURI());
+//			jt.setURIRoot(r.getRootResourceURI());
+			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
+			p.setProperty(IRIArgument.ROOT.toString(), r.getRootResourceURI());
 		}
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(r.getRepositoryURL());
 		RemoteRepository rr = Utils.createAndGetRemoteRepositoryForNamespace(manager, r.getNamespace(),
@@ -83,7 +92,8 @@ public class Uploader implements Runnable {
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
 		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
-			m = jt.getModel(r.getPayload());
+//			m = jt.getModel(r.getPayload());
+			jt.triplify(p, new BaseFacadeXBuilder("uploader", p));
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
 
@@ -108,10 +118,17 @@ public class Uploader implements Runnable {
 
 	private void accomplishRequest(JSONRequestUpdate r) throws Exception {
 		logger.debug("Update Dataset Request");
-		JSONTransformer jt = new JSONTransformer(r.getOntologyURIPrefix());
+		JSONTriplifier jt = new JSONTriplifier();
+//		JSONTransformer jt = new JSONTransformer(r.getOntologyURIPrefix());
+		Properties p = new Properties();
+		p.setProperty(IRIArgument.CONTENT.toString(), r.getPayload().toString());
+		p.setProperty(IRIArgument.NAMESPACE.toString(), r.getOntologyURIPrefix());
 		if (r.getRootResourceURI() != null) {
 			logger.trace("Setting root URI");
-			jt.setURIRoot(r.getRootResourceURI());
+//			jt.setURIRoot(r.getRootResourceURI());
+			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
+			p.setProperty(IRIArgument.ROOT.toString(), r.getRootResourceURI());
+
 		}
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(r.getRepositoryURL());
 		RemoteRepository rr = Utils.createAndGetRemoteRepositoryForNamespace(manager, r.getNamespace(),
@@ -123,7 +140,8 @@ public class Uploader implements Runnable {
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
 		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
-			m = jt.getModel(r.getPayload());
+//			m = jt.getModel(r.getPayload());
+			jt.triplify(p, new BaseFacadeXBuilder("uploader", p));
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
 
