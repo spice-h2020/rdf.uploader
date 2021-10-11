@@ -11,9 +11,9 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.openrdf.rio.RDFFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
@@ -33,7 +33,7 @@ public class Uploader implements Runnable {
 	private BlockingQueue<Request> requests;
 	private boolean stop = false;
 	private String tmpFolder;
-	private static Logger logger = LogManager.getLogger(Uploader.class);
+	private static final Logger logger = LoggerFactory.getLogger(Uploader.class);
 
 	public Uploader(BlockingQueue<Request> uploadRequests, String tmpFolder) {
 		super();
@@ -87,13 +87,14 @@ public class Uploader implements Runnable {
 				r.getNamespaceProperties());
 
 		Model m = ModelFactory.createDefaultModel();
-		logger.trace("Reading as JSON-LD");
+		logger.trace("Reading file {}", r.getPayload().toString());
 		RDFDataMgr.read(m, new StringReader(r.getPayload().toString()), "", Lang.JSONLD);
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
 		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
 //			m = jt.getModel(r.getPayload());
-			jt.triplify(p, new BaseFacadeXBuilder("uploader", p));
+			m = ModelFactory
+					.createModelForGraph(jt.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph());
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
 
