@@ -30,10 +30,10 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.spice.rdfuploader.uploaders.Utils;
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
@@ -44,7 +44,7 @@ import eu.spice.uploaders.rdfuploader.model.Request;
 
 public class ActivityLogWatchdog implements Runnable {
 
-	private static final Logger logger = LogManager.getLogger(ActivityLogWatchdog.class);
+	private static final Logger logger = LoggerFactory.getLogger(ActivityLogWatchdog.class);
 
 	private String password, username, apif_host, lastTimestampFile, apif_uri_scheme, activity_log_path, baseNS,
 			repositoryURL, baseResource, baseGraph, ontologyURIPRefix, blazegraphNamespacePrefix;
@@ -152,7 +152,7 @@ public class ActivityLogWatchdog implements Runnable {
 					String docId = split[split.length - 1];
 					this.requests.put(new JSONRequestDelete(blazegraphNamespace, repositoryURL,
 							getGraphURI(datasetIdentifier, docId), blazegraphProperties));
-					logger.trace(this.requests.size());
+					logger.trace("{}", this.requests.size());
 				} else if (operationType.equals(UPDATE)) {
 					logger.trace("Update Document");
 					String payload = qs.get("payload").asLiteral().getString();
@@ -199,7 +199,7 @@ public class ActivityLogWatchdog implements Runnable {
 				// If the file is corrupted this should throw a NumberFormatException
 				try {
 					return Integer.parseInt(line);
-				}catch(NumberFormatException e11){
+				} catch (NumberFormatException e11) {
 					logger.error("Corrupted timestamp file (ignored)");
 				}
 			}
@@ -226,11 +226,8 @@ public class ActivityLogWatchdog implements Runnable {
 		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
 
 		logger.trace("HTTP client ready - auth configured");
-		RequestConfig requestConfig = RequestConfig.custom()
-		        .setSocketTimeout(TIMEOUT)
-		        .setConnectTimeout(TIMEOUT)
-		        .setConnectionRequestTimeout(TIMEOUT)
-		        .build();
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
 		HttpResponse response;
 		try {
 
@@ -251,13 +248,13 @@ public class ActivityLogWatchdog implements Runnable {
 			logger.trace("Start browsing");
 			while (true) {
 
-				logger.debug("Calling page number " + pageNumber);
+				logger.debug("Calling page number {}", pageNumber);
 
 				builder.setParameter("page", pageNumber + "");
 				HttpGet getRequest = new HttpGet(builder.build());
 				getRequest.setConfig(requestConfig);
 				response = client.execute(getRequest);
-				logger.debug("Response: " + response.getStatusLine().toString()); // FIXME Use slf4j instead!
+				logger.debug("Response: {}", response.getStatusLine().toString());
 				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
 				String l;
@@ -284,7 +281,7 @@ public class ActivityLogWatchdog implements Runnable {
 			}
 
 		} catch (IOException | URISyntaxException e) {
-			logger.error(e);
+			logger.error("{}", e.toString());
 		}
 
 		return m;
