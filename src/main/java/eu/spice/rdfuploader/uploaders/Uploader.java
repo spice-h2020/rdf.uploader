@@ -142,7 +142,9 @@ public class Uploader implements Runnable {
 		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
 //			m = jt.getModel(r.getPayload());
-			jt.triplify(p, new BaseFacadeXBuilder("uploader", p));
+//			jt.triplify(p, new BaseFacadeXBuilder("uploader", p));
+			m = ModelFactory
+					.createModelForGraph(jt.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph());
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
 
