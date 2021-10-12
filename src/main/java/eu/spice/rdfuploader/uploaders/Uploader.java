@@ -98,18 +98,18 @@ public class Uploader implements Runnable {
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
 
-		String rdfFile = tmpFolder + "/" + System.nanoTime() + ".rdf";
-		m.write(new FileOutputStream(new File(rdfFile)));
+		String rdfFile = tmpFolder + "/" + System.nanoTime() + ".nt";
+		m.write(new FileOutputStream(new File(rdfFile)), "NT");
 		if (r.getGraphURI() != null) {
 			String nqFile = tmpFolder + "/" + System.nanoTime() + ".nq";
 			RDFDataMgr.writeQuads(new FileOutputStream(new File(nqFile)),
 					new IteratorQuadFromTripleIterator(
-							RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.RDFXML, ""),
+							RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.NT, ""),
 							r.getGraphURI()));
 			rr.add(new RemoteRepository.AddOp(new File(nqFile), RDFFormat.NQUADS));
 			new File(nqFile).delete();
 		} else {
-			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.RDFXML));
+			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.NTRIPLES));
 		}
 		manager.close();
 		m.close();
@@ -148,13 +148,13 @@ public class Uploader implements Runnable {
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
 
-		String rdfFile = tmpFolder + "/" + System.nanoTime() + ".rdf";
-		m.write(new FileOutputStream(new File(rdfFile)));
+		String rdfFile = tmpFolder + "/" + System.nanoTime() + ".nt";
+		m.write(new FileOutputStream(new File(rdfFile)), "NT");
 		if (r.getGraphURI() != null) {
 			String nqFile = tmpFolder + "/" + System.nanoTime() + ".nq";
 			RDFDataMgr.writeQuads(new FileOutputStream(new File(nqFile)),
 					new IteratorQuadFromTripleIterator(
-							RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.RDFXML, ""),
+							RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.NT, ""),
 							r.getGraphURI()));
 
 			rr.prepareUpdate("CLEAR GRAPH <" + r.getGraphURI() + ">").evaluate();
@@ -162,7 +162,7 @@ public class Uploader implements Runnable {
 			new File(nqFile).delete();
 
 		} else {
-			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.RDFXML));
+			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.NTRIPLES));
 		}
 		manager.close();
 		m.close();
