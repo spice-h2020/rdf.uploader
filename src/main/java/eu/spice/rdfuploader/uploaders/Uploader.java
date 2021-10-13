@@ -77,7 +77,7 @@ public class Uploader implements Runnable {
 		p.setProperty(IRIArgument.CONTENT.toString(), r.getPayload().toString());
 		p.setProperty(IRIArgument.NAMESPACE.toString(), r.getOntologyURIPrefix());
 		if (r.getRootResourceURI() != null) {
-			logger.trace("Setting root URI");
+			logger.trace("Setting root URI {}", r.getRootResourceURI());
 //			jt.setURIRoot(r.getRootResourceURI());
 			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
 			p.setProperty(IRIArgument.ROOT.toString(), r.getRootResourceURI());
@@ -125,7 +125,7 @@ public class Uploader implements Runnable {
 		p.setProperty(IRIArgument.CONTENT.toString(), r.getPayload().toString());
 		p.setProperty(IRIArgument.NAMESPACE.toString(), r.getOntologyURIPrefix());
 		if (r.getRootResourceURI() != null) {
-			logger.trace("Setting root URI");
+			logger.trace("Setting root URI {}", r.getRootResourceURI());
 //			jt.setURIRoot(r.getRootResourceURI());
 			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
 			p.setProperty(IRIArgument.ROOT.toString(), r.getRootResourceURI());
