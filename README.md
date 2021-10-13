@@ -12,7 +12,7 @@ cd rdf.uploader/
 mvn clean install
 ```
 
-Before running RDF Uploader make sure that [json2rdf](https://github.com/spice-h2020/json2rdf) is installed on your machine.
+Before running RDF Uploader make sure that [SPARQL Anything](https://github.com/SPARQL-Anything/sparql.anything) is installed on your machine.
 
 ### Configuration
 
