@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.spice.rdfuploader.uploaders.Utils;
+import eu.spice.uploaders.rdfuploader.model.ConstructKnowledgeGraph;
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestCreate;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestDelete;
@@ -47,7 +48,7 @@ public class ActivityLogWatchdog implements Runnable {
 	private static final Logger logger = LoggerFactory.getLogger(ActivityLogWatchdog.class);
 
 	private String password, username, apif_host, lastTimestampFile, apif_uri_scheme, activity_log_path, baseNS,
-			repositoryURL, baseResource, baseGraph, ontologyURIPRefix, blazegraphNamespacePrefix;
+			repositoryURL, baseResource, baseGraph, ontologyURIPRefix, blazegraphNamespacePrefix, uuiddatasetCommands;
 
 	private boolean useNamedresources = true;
 
@@ -102,6 +103,7 @@ public class ActivityLogWatchdog implements Runnable {
 		ontologyURIPRefix = c.getOntologyURIPRefix();
 		useNamedresources = c.isUseNamedresources();
 		blazegraphNamespacePrefix = c.getBlazegraphNamespacePrefix();
+		uuiddatasetCommands = c.getUuidDatasetCommands();
 	}
 
 	@Override
@@ -125,6 +127,22 @@ public class ActivityLogWatchdog implements Runnable {
 				logger.trace("Processing " + qs.get("operationType").asResource().getLocalName() + " operation "
 						+ qs.get("ale").asResource().getLocalName() + " with timestamp " + lastTimestamp);
 				String datasetIdentifier = qs.get("datasetId").asLiteral().getString();
+
+				if (datasetIdentifier.equals(uuiddatasetCommands)) {
+					JSONObject obj = new JSONObject(qs.get("payload").asLiteral().getString());
+					ConstructKnowledgeGraph r = new ConstructKnowledgeGraph(obj.getString("constructQuery"),
+							blazegraphNamespacePrefix + obj.getString("sourceNamespace"),
+							blazegraphNamespacePrefix + obj.getString("targetNamespace"), repositoryURL,
+							blazegraphProperties);
+					if (obj.has("targetGraphURI")) {
+						r.setTargetGraphURI(obj.getString("targetGraphURI"));
+					}
+					this.requests.put(r);
+					logger.trace("Command received");
+
+					continue;
+				}
+
 				String blazegraphNamespace = blazegraphNamespacePrefix + datasetIdentifier;
 
 				Resource operationType = qs.get("operationType").asResource();

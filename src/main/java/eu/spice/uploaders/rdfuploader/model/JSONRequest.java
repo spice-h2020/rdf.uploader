@@ -2,7 +2,7 @@ package eu.spice.uploaders.rdfuploader.model;
 
 import java.util.Properties;
 
-public class JSONRequest implements Request {
+public abstract class JSONRequest implements Request {
 
 	private String namespace;
 	private String repositoryURL;
@@ -17,7 +17,7 @@ public class JSONRequest implements Request {
 		this.namespaceProperties = namespaceProperties;
 	}
 
-	public String getNamespace() {
+	public String getTargetNamespace() {
 		return namespace;
 	}
 

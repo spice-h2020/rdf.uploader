@@ -16,7 +16,8 @@ public class RDFUploaderConfiguration {
 			baseNS = "http://spice-apif.local/object/activity_log/", repositoryURL = "http://localhost:9999/blazegraph",
 			blazegraphPropertiesFilepath = "src/main/resources/blazegraph.properties",
 			baseResource = "https://w3id.org/spice/resource/", baseGraph = baseResource + "graph/",
-			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder;
+			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder,
+			uuidDatasetCommands;
 
 	private boolean useNamedresources = true;
 
@@ -47,6 +48,7 @@ public class RDFUploaderConfiguration {
 			tmpFolder = config.getString("tmpFolder");
 			lookupRateSeconds = config.getInt("lookupRateSeconds");
 			blazegraphNamespacePrefix = config.getString("blazegraphNamespacePrefix");
+			uuidDatasetCommands = config.getString("uuidDatasetCommands");
 
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
@@ -194,6 +196,14 @@ public class RDFUploaderConfiguration {
 
 	public void setBlazegraphNamespacePrefix(String blazegraphNamespacePrefix) {
 		this.blazegraphNamespacePrefix = blazegraphNamespacePrefix;
+	}
+
+	public String getUuidDatasetCommands() {
+		return uuidDatasetCommands;
+	}
+
+	public void setUuidDatasetCommands(String uuidDatasetCommands) {
+		this.uuidDatasetCommands = uuidDatasetCommands;
 	}
 
 }
