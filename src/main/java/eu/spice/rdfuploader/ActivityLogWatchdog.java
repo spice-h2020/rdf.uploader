@@ -5,22 +5,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.URISyntaxException;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
@@ -28,15 +15,13 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.spice.rdfuploader.Constants.RDFJobsConstants;
 import eu.spice.rdfuploader.uploaders.Utils;
-import eu.spice.uploaders.rdfuploader.model.ConstructKnowledgeGraph;
+import eu.spice.uploaders.rdfuploader.model.ConstructRequest;
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestCreate;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestDelete;
@@ -47,10 +32,10 @@ public class ActivityLogWatchdog implements Runnable {
 
 	private static final Logger logger = LoggerFactory.getLogger(ActivityLogWatchdog.class);
 
-	private String password, username, apif_host, lastTimestampFile, apif_uri_scheme, activity_log_path, baseNS,
-			repositoryURL, baseResource, baseGraph, ontologyURIPRefix, blazegraphNamespacePrefix, uuiddatasetCommands;
+	private String lastTimestampFile, repositoryURL, baseResource, ontologyURIPRefix, rdf_jobs_dataset;
 
 	private boolean useNamedresources = true;
+	private RDFUploaderContext context;
 
 	private static final String AL_PREFIX = "https://mkdf.github.io/context/activity-log#";
 	private static final Resource CREATE_DATASET = ModelFactory.createDefaultModel()
@@ -58,8 +43,6 @@ public class ActivityLogWatchdog implements Runnable {
 			CREATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Create"),
 			UPDATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Update"),
 			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete");
-
-	private static final int TIMEOUT = 10000;
 
 	//@f:off
 	private static String getLastOperationsQuery =
@@ -81,29 +64,22 @@ public class ActivityLogWatchdog implements Runnable {
 	private BlockingQueue<Request> requests;
 	private Properties blazegraphProperties;
 
-	public ActivityLogWatchdog(RDFUploaderConfiguration c, BlockingQueue<Request> requests) throws IOException {
+	public ActivityLogWatchdog(RDFUploaderContext context, BlockingQueue<Request> requests) throws IOException {
 		logger.trace("constructor invoked");
 		this.requests = requests;
-		init(c);
+		this.context = context;
+		init(context.getConf());
 	}
 
 	private void init(RDFUploaderConfiguration c) throws IOException {
 		logger.trace("init invoked");
 		blazegraphProperties = Utils.loadProperties(c.getBlazegraphPropertiesFilepath());
-		username = c.getUsername();
-		password = c.getPassword();
-		apif_host = c.getApif_host();
 		lastTimestampFile = c.getLastTimestampFile();
-		apif_uri_scheme = c.getApif_uri_scheme();
-		activity_log_path = c.getActivity_log_path();
-		baseNS = c.getBaseNS();
 		repositoryURL = c.getRepositoryURL();
 		baseResource = c.getBaseResource();
-		baseGraph = c.getBaseGraph();
 		ontologyURIPRefix = c.getOntologyURIPRefix();
 		useNamedresources = c.isUseNamedresources();
-		blazegraphNamespacePrefix = c.getBlazegraphNamespacePrefix();
-		uuiddatasetCommands = c.getUuidDatasetCommands();
+		rdf_jobs_dataset = c.getRDFJobsDataset();
 	}
 
 	@Override
@@ -118,7 +94,9 @@ public class ActivityLogWatchdog implements Runnable {
 		logger.trace("Last timestamp " + lastTimestamp);
 
 		try {
-			Model m = getActivityLogEntitiesFromBrowse(lastTimestamp);
+			logger.trace("Getting activity log entities from browse");
+			Model m = context.getDbClient().getActivityLogEntitiesFromBrowse(lastTimestamp);
+			logger.trace("Triples within the model {}", m.size());
 			QueryExecution qexec = QueryExecutionFactory.create(getLastOperationsQuery, m);
 			ResultSet rs = qexec.execSelect();
 			while (rs.hasNext()) {
@@ -127,75 +105,107 @@ public class ActivityLogWatchdog implements Runnable {
 				logger.trace("Processing " + qs.get("operationType").asResource().getLocalName() + " operation "
 						+ qs.get("ale").asResource().getLocalName() + " with timestamp " + lastTimestamp);
 				String datasetIdentifier = qs.get("datasetId").asLiteral().getString();
-
-				if (datasetIdentifier.equals(uuiddatasetCommands)) {
-					JSONObject obj = new JSONObject(qs.get("payload").asLiteral().getString());
-					ConstructKnowledgeGraph r = new ConstructKnowledgeGraph(obj.getString("constructQuery"),
-							blazegraphNamespacePrefix + obj.getString("sourceNamespace"),
-							blazegraphNamespacePrefix + obj.getString("targetNamespace"), repositoryURL,
-							blazegraphProperties);
-					if (obj.has("targetGraphURI")) {
-						r.setTargetGraphURI(obj.getString("targetGraphURI"));
-					}
-					this.requests.put(r);
-					logger.trace("Command received");
-
-					continue;
-				}
-
-				String blazegraphNamespace = blazegraphNamespacePrefix + datasetIdentifier;
-
+				logger.trace("Request for the dataset {}", datasetIdentifier);
+				String blazegraphNamespace = context.getBlazegraphNamespace(datasetIdentifier);
 				Resource operationType = qs.get("operationType").asResource();
-				if (operationType.equals(CREATE_DATASET)) {
-					logger.trace("Create Dataset");
-					this.requests
-							.put(new CreateNamespaceRequest(blazegraphNamespace, repositoryURL, blazegraphProperties));
-				} else if (operationType.equals(CREATE)) {
-					logger.trace("Create Document");
-					String payload = qs.get("payload").asLiteral().getString();
-					String docId = qs.get("docId").asLiteral().getString();
-					JSONRequestCreate request = new JSONRequestCreate(blazegraphNamespace, repositoryURL,
-							getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
-							getOntologyURIPrefix(datasetIdentifier, docId));
-					if (useNamedresources) {
-						logger.trace("Use named resources");
-						request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
-					}
-					this.requests.put(request);
-				} else if (operationType.equals(DELETE)) {
-					logger.trace("Delete Document");
-					// TODO remove this as soon as issue 5 is addressed
-					String endpoint = qs.get("endpoint").asLiteral().getString();
-					String[] split = endpoint.split("/");
-					String docId = split[split.length - 1];
-					this.requests.put(new JSONRequestDelete(blazegraphNamespace, repositoryURL,
-							getGraphURI(datasetIdentifier, docId), blazegraphProperties));
-					logger.trace("{}", this.requests.size());
-				} else if (operationType.equals(UPDATE)) {
-					logger.trace("Update Document");
-					String payload = qs.get("payload").asLiteral().getString();
-					String docId = qs.get("docId").asLiteral().getString();
-					JSONRequestUpdate request = new JSONRequestUpdate(blazegraphNamespace, repositoryURL,
-							getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
-							getOntologyURIPrefix(datasetIdentifier, docId));
-					if (useNamedresources) {
-						logger.trace("Use named resources");
-						request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
-					}
-					this.requests.put(request);
+				if (checkRDFJobs(datasetIdentifier)) {
+					enqueueRDFJobRequest(qs, operationType);
+				} else {
+					enqueueRDFUploaderRequest(qs, datasetIdentifier, blazegraphNamespace, operationType);
 				}
-
 			}
-
 			saveLastTimestamp(lastTimestamp);
-
-		} catch (IOException | InterruptedException e) {
+		} catch (Exception e) {
 			logger.error("Exception while querying the activity log", e);
+			e.printStackTrace();
 		}
 	}
 
-	private String getGraphURI(String datasetId, String docId) {
-		return baseGraph + datasetId + "/" + docId;
+	void enqueueRDFUploaderRequest(QuerySolution qs, String datasetIdentifier, String blazegraphNamespace,
+			Resource operationType) throws InterruptedException {
+		if (operationType.equals(CREATE_DATASET)) {
+			logger.trace("Create Dataset");
+			this.requests
+					.put(new CreateNamespaceRequest(blazegraphNamespace, repositoryURL, blazegraphProperties, context));
+		} else if (operationType.equals(CREATE)) {
+			String payload = qs.get("payload").asLiteral().getString();
+			createDocumentRequest(qs, datasetIdentifier, blazegraphNamespace, payload);
+		} else if (operationType.equals(DELETE)) {
+			logger.trace("Delete Document");
+			// TODO remove this as soon as issue 5 is addressed
+			String endpoint = qs.get("endpoint").asLiteral().getString();
+			String[] split = endpoint.split("/");
+			String docId = split[split.length - 1];
+			this.requests.put(new JSONRequestDelete(blazegraphNamespace, repositoryURL,
+					context.getGraphURI(datasetIdentifier, docId), blazegraphProperties, context));
+			logger.trace("{}", this.requests.size());
+		} else if (operationType.equals(UPDATE)) {
+			logger.trace("Update Document");
+			String payload = qs.get("payload").asLiteral().getString();
+			String docId = qs.get("docId").asLiteral().getString();
+			JSONRequestUpdate request = new JSONRequestUpdate(blazegraphNamespace, repositoryURL,
+					context.getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
+					getOntologyURIPrefix(datasetIdentifier, docId), context);
+			if (useNamedresources) {
+				logger.trace("Use named resources");
+				request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
+			}
+			this.requests.put(request);
+		}
+	}
+
+	void enqueueRDFJobRequest(QuerySolution qs, Resource operationType) {
+		if (operationType.equals(CREATE_DATASET)) {
+			// DO NOP
+		} else if (operationType.equals(CREATE)) {
+			String payload = qs.get("payload").asLiteral().getString();
+			String docId = qs.get("docId").asLiteral().getString();
+			createConstructJobRequest(docId, payload);
+		} else if (operationType.equals(DELETE)) {
+		} else if (operationType.equals(UPDATE)) {
+		}
+	}
+
+	void createConstructJobRequest(String docId, String payload) {
+		logger.trace("Create Job");
+		logger.trace("DocId {} Payload {}", docId, payload);
+		JSONObject jobj = new JSONObject(payload);
+
+		// If the status of the request is pending, then create a job and put it into
+		// the queue.
+		if (jobj.getString(RDFJobsConstants.STATUS).equals(RDFJobsConstants.PENDING)) {
+
+			// Update status of the job to processing
+			jobj.put(Constants.RDFJobsConstants.STATUS, Constants.RDFJobsConstants.PROCESSING);
+			context.getDbClient().updateDocument(rdf_jobs_dataset, docId, jobj);
+
+			try {
+				ConstructRequest cr = new ConstructRequest(jobj, docId, this.context);
+				this.requests.put(cr);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+	void createDocumentRequest(QuerySolution qs, String datasetIdentifier, String blazegraphNamespace, String payload)
+			throws InterruptedException {
+		logger.trace("Create Document");
+		String docId = qs.get("docId").asLiteral().getString();
+		JSONRequestCreate request = new JSONRequestCreate(blazegraphNamespace, repositoryURL,
+				context.getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
+				getOntologyURIPrefix(datasetIdentifier, docId), context);
+		if (useNamedresources) {
+			logger.trace("Use named resources");
+			request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
+		}
+		this.requests.put(request);
+	}
+
+	private boolean checkRDFJobs(String datasetIdentifier) {
+		return datasetIdentifier.equals(rdf_jobs_dataset);
 	}
 
 	private String getRootURI(String datasetId, String docId) {
@@ -232,78 +242,6 @@ public class ActivityLogWatchdog implements Runnable {
 		FileOutputStream fos = new FileOutputStream(timestampFile);
 		fos.write((timestamp + "\n").getBytes());
 		fos.close();
-	}
-
-	private Model getActivityLogEntitiesFromBrowse(Integer lastTimestamp) {
-		logger.trace("Method getActivityLogEntitiesFromBrowse invoked");
-		Model m = ModelFactory.createDefaultModel();
-
-		CredentialsProvider provider = new BasicCredentialsProvider();
-		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
-		provider.setCredentials(AuthScope.ANY, credentials);
-		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-
-		logger.trace("HTTP client ready - auth configured");
-		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
-				.setConnectionRequestTimeout(TIMEOUT).build();
-		HttpResponse response;
-		try {
-
-			URIBuilder builder = new URIBuilder();
-			builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath(activity_log_path);
-
-			if (lastTimestamp != null) {
-				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp
-						+ "  }, \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
-			} else {
-				builder.setParameter("query",
-						"{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
-			}
-
-			builder.setParameter("pagesize", "100");
-
-			int pageNumber = 1;
-			logger.trace("Start browsing");
-			while (true) {
-
-				logger.debug("Calling page number {}", pageNumber);
-
-				builder.setParameter("page", pageNumber + "");
-				HttpGet getRequest = new HttpGet(builder.build());
-				getRequest.setConfig(requestConfig);
-				response = client.execute(getRequest);
-				logger.debug("Response: {}", response.getStatusLine().toString());
-				BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-				String l;
-				StringBuilder sb = new StringBuilder();
-				while ((l = br.readLine()) != null) {
-					sb.append(l);
-				}
-
-				JSONObject objectResponse = new JSONObject(sb.toString());
-				if (objectResponse.has("error")) {
-					logger.error(objectResponse.getString("error"));
-				}
-				logger.trace("Response content");
-				JSONArray results = objectResponse.getJSONArray("results");
-
-				logger.debug("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
-						+ results.length());
-				if (results.length() > 0) {
-					RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
-				} else {
-					break;
-				}
-				pageNumber++;
-			}
-
-		} catch (IOException | URISyntaxException e) {
-			logger.error("{}", e.toString());
-		}
-
-		return m;
-
 	}
 
 }

@@ -8,39 +8,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.openrdf.model.Statement;
-import org.openrdf.query.GraphQueryResult;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import com.bigdata.rdf.sail.webapp.SD;
-import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
+import eu.spice.rdfuploader.Constants.RDFJobsConstants;
 
 public class Utils {
 
-	private static Logger logger = LogManager.getLogger(Utils.class);
-
-	/*
-	 * Check if a blazegraph namespace already exists.
-	 */
-	public static boolean namespaceExists(RemoteRepositoryManager repo, String namespace) throws Exception {
-
-		GraphQueryResult res = repo.getRepositoryDescriptions();
-		try {
-			while (res.hasNext()) {
-				Statement stmt = res.next();
-				if (stmt.getPredicate().toString().equals(SD.KB_NAMESPACE.stringValue())) {
-					if (namespace.equals(stmt.getObject().stringValue())) {
-						return true;
-					}
-				}
-			}
-		} finally {
-			res.close();
-		}
-		return false;
-	}
 
 	public static Properties loadProperties(String resource) throws IOException {
 		Properties p = new Properties();
@@ -49,18 +23,19 @@ public class Utils {
 		return p;
 	}
 
-	public static RemoteRepository createAndGetRemoteRepositoryForNamespace(RemoteRepositoryManager manager,
-			String namespace, Properties namespaceProperties) throws Exception {
-		logger.trace("Create " + namespace + " namepsace.");
-		if (!namespaceExists(manager, namespace)) {
-			manager.createRepository(namespace, namespaceProperties);
-			logger.trace("Namespace " + namespace + " created!");
+	public static void addMessage(JSONObject obj, String messageString) {
+		JSONArray history;
+		if (obj.has(RDFJobsConstants.HISTORY)) {
+			history = obj.getJSONArray(RDFJobsConstants.HISTORY);
 		} else {
-			logger.trace("Namespace " + namespace + " already exists!");
+			history = new JSONArray();
 		}
 
-		logger.trace("Namespace " + namespace + " created!");
-		return manager.getRepositoryForNamespace(namespace);
+		JSONObject message = new JSONObject();
+		message.put(RDFJobsConstants.MESSAGE, messageString);
+		message.put(RDFJobsConstants.TIMESTAMP, System.currentTimeMillis());
+		history.put(message);
+		obj.put(RDFJobsConstants.HISTORY, history);
 	}
 
 }

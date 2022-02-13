@@ -4,12 +4,12 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.ConfigurationUtils;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RDFUploaderConfiguration {
 
-	private static final Logger logger = LogManager.getLogger(RDFUploaderConfiguration.class);
+	private static final Logger logger = LoggerFactory.getLogger(RDFUploaderConfiguration.class);
 
 	private String username = "datahub-admin", password = "DATAHUB1234567890", apif_host = "spice-apif.local",
 			lastTimestampFile = "timestamp", apif_uri_scheme = "http", activity_log_path = "/object/activity_log",
@@ -17,18 +17,19 @@ public class RDFUploaderConfiguration {
 			blazegraphPropertiesFilepath = "src/main/resources/blazegraph.properties",
 			baseResource = "https://w3id.org/spice/resource/", baseGraph = baseResource + "graph/",
 			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder,
-			uuidDatasetCommands;
+			rdf_jobs_dataset;
 
-	private boolean useNamedresources = true;
+	private boolean useNamedresources = true, clean = false;
 
-	private int requestQueueSize = 100, lookupRateSeconds = 10;
+	private int requestQueueSize = 100, lookupRateSeconds = 10, initialDelay = 30;
 
 	private static RDFUploaderConfiguration instance;
 
-	private RDFUploaderConfiguration() {
+	private RDFUploaderConfiguration(String configurationFile) {
 		try {
 			Configurations configs = new Configurations();
-			Configuration config = configs.properties("config.properties");
+			Configuration config = configs.properties(configurationFile);
+			logger.trace("Configuration file {}", configurationFile);
 			logger.trace(ConfigurationUtils.toString(config));
 
 			username = config.getString("username");
@@ -48,7 +49,9 @@ public class RDFUploaderConfiguration {
 			tmpFolder = config.getString("tmpFolder");
 			lookupRateSeconds = config.getInt("lookupRateSeconds");
 			blazegraphNamespacePrefix = config.getString("blazegraphNamespacePrefix");
-			uuidDatasetCommands = config.getString("uuidDatasetCommands");
+			rdf_jobs_dataset = config.getString("rdf_jobs_dataset");
+			clean = config.getBoolean("clean", false);
+			initialDelay = config.getInt("initialDelay", 30);
 
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
@@ -56,8 +59,12 @@ public class RDFUploaderConfiguration {
 	}
 
 	public static RDFUploaderConfiguration getInstance() {
+		return getInstance("config.properties");
+	}
+
+	public static RDFUploaderConfiguration getInstance(String configurationFile) {
 		if (instance == null) {
-			instance = new RDFUploaderConfiguration();
+			instance = new RDFUploaderConfiguration(configurationFile);
 		}
 		return instance;
 	}
@@ -198,12 +205,16 @@ public class RDFUploaderConfiguration {
 		this.blazegraphNamespacePrefix = blazegraphNamespacePrefix;
 	}
 
-	public String getUuidDatasetCommands() {
-		return uuidDatasetCommands;
+	public String getRDFJobsDataset() {
+		return rdf_jobs_dataset;
 	}
 
-	public void setUuidDatasetCommands(String uuidDatasetCommands) {
-		this.uuidDatasetCommands = uuidDatasetCommands;
+	public boolean isClean() {
+		return clean;
+	}
+
+	public int getInitalDealy() {
+		return initialDelay;
 	}
 
 }

@@ -22,7 +22,7 @@ import com.github.sparqlanything.model.BaseFacadeXBuilder;
 import com.github.sparqlanything.model.IRIArgument;
 
 import eu.spice.rdfuploader.RDFUploaderConfiguration;
-import eu.spice.rdfuploader.uploaders.Utils;
+import eu.spice.rdfuploader.RDFUploaderContext;
 import it.cnr.istc.stlab.lgu.commons.semanticweb.iterators.IteratorQuadFromTripleIterator;
 
 public class JSONRequestCreate extends JSONRequest {
@@ -32,8 +32,8 @@ public class JSONRequestCreate extends JSONRequest {
 	private static final Logger logger = LoggerFactory.getLogger(JSONRequestCreate.class);
 
 	public JSONRequestCreate(String namespace, String repositoryURL, String graphURI, Properties namespaceProperties,
-			JSONObject payload, String ontologyURIPrefix) {
-		super(namespace, repositoryURL, graphURI, namespaceProperties);
+			JSONObject payload, String ontologyURIPrefix, RDFUploaderContext context) {
+		super(namespace, repositoryURL, graphURI, namespaceProperties, context);
 		this.payload = payload;
 		this.ontologyURIPrefix = ontologyURIPrefix;
 	}
@@ -76,8 +76,8 @@ public class JSONRequestCreate extends JSONRequest {
 			p.setProperty(IRIArgument.ROOT.toString(), this.getRootResourceURI());
 		}
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
-		RemoteRepository rr = Utils.createAndGetRemoteRepositoryForNamespace(manager, this.getTargetNamespace(),
-				this.getNamespaceProperties());
+		RemoteRepository rr = super.getContext().getBlazegraphClient().createAndGetRemoteRepositoryForNamespace(manager,
+				this.getTargetNamespace(), this.getNamespaceProperties());
 
 		Model m = ModelFactory.createDefaultModel();
 		logger.trace("Reading file {}", this.getPayload().toString());
