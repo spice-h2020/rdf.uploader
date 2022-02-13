@@ -58,4 +58,9 @@ public class CreateNamespaceRequest implements Request {
 		logger.trace("Create Namespace Request.. accomplished");
 	}
 
+	@Override
+	public String getDocId() {
+		return null;
+	}
+
 }

@@ -109,4 +109,9 @@ public class ConstructRequest implements Request {
 		}
 	}
 
+	@Override
+	public String getDocId() {
+		return docIdJob;
+	}
+
 }

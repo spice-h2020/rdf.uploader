@@ -119,4 +119,10 @@ public class JSONRequestUpdate extends JSONRequest {
 
 	}
 
+	@Override
+	public String getDocId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

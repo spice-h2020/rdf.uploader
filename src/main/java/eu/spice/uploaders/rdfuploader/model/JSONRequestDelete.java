@@ -22,4 +22,10 @@ public class JSONRequestDelete extends JSONRequest {
 				getGraphURI());
 	}
 
+	@Override
+	public String getDocId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

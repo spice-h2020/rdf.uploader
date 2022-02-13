@@ -110,4 +110,9 @@ public class JSONRequestCreate extends JSONRequest {
 		logger.trace("Create Dataset Request - Accomplished");
 	}
 
+	@Override
+	public String getDocId() {
+		return null;
+	}
+
 }

@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
+import java.util.function.Predicate;
 
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -155,15 +156,29 @@ public class ActivityLogWatchdog implements Runnable {
 	}
 
 	void enqueueRDFJobRequest(QuerySolution qs, Resource operationType) {
+		String docId = qs.get("docId").asLiteral().getString();
+		String payload = qs.get("payload").asLiteral().getString();
 		if (operationType.equals(CREATE_DATASET)) {
 			// DO NOP
 		} else if (operationType.equals(CREATE)) {
-			String payload = qs.get("payload").asLiteral().getString();
-			String docId = qs.get("docId").asLiteral().getString();
 			createConstructJobRequest(docId, payload);
 		} else if (operationType.equals(DELETE)) {
+			removingJob(docId);
 		} else if (operationType.equals(UPDATE)) {
+			removingJob(docId);
+			createConstructJobRequest(docId, payload);
 		}
+	}
+
+	void removingJob(String docId) {
+		logger.trace("Removing job {}", docId);
+		boolean removed = requests.removeIf(new Predicate<Request>() {
+			@Override
+			public boolean test(Request t) {
+				return t.getDocId() != null && t.getDocId().equals(docId);
+			}
+		});
+		logger.trace("Job {} removed? {}", docId, removed);
 	}
 
 	void createConstructJobRequest(String docId, String payload) {
