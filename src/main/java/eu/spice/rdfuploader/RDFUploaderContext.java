@@ -33,4 +33,22 @@ public class RDFUploaderContext {
 	public String getGraphURI(String datasetId, String docId) {
 		return conf.getBaseGraph() + datasetId + "/" + docId;
 	}
+
+	public String getDocIdFromGraphURI(String graphURI) {
+		String[] split = graphURI.split("/");
+		return split[split.length - 1];
+	}
+
+	public String getDatasetIdFromGraphURI(String graphURI) {
+		String[] split = graphURI.split("/");
+		return split[split.length - 2];
+	}
+
+	public String getRootURI(String datasetId, String docId) {
+		return conf.getBaseResource() + datasetId + "/" + docId;
+	}
+
+	public String getOntologyURIPrefix(String datasetId, String docId) {
+		return conf.getOntologyURIPRefix() + datasetId + "/" + docId + "/";
+	}
 }

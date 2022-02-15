@@ -12,6 +12,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -155,6 +156,101 @@ public class DocumentDBClient {
 		} catch (URISyntaxException e) {
 			logger.error(e.getMessage());
 		}
+
+	}
+
+	public JSONObject retrieveDocument(String datasetId, String documentId) {
+		logger.trace("Method retrieveDocument invoked");
+
+		CredentialsProvider provider = new BasicCredentialsProvider();
+		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+		provider.setCredentials(AuthScope.ANY, credentials);
+		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
+		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
+
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath("/object/" + datasetId + "/" + documentId);
+
+		HttpGet getRequest = new HttpGet();
+
+		try {
+			getRequest.setURI(builder.build());
+			getRequest.addHeader("Content-Type", "application/json");
+			getRequest.setConfig(requestConfig);
+			HttpHost host = new HttpHost(apif_host);
+			HttpResponse response = client.execute(host, getRequest);
+			final HttpEntity resEntity = response.getEntity();
+			if (resEntity != null) {
+				logger.trace("Response content length: " + resEntity.getContentLength());
+				String objString = new String(EntityUtils.toByteArray(resEntity));
+				logger.trace("Result {}", objString);
+				return new JSONArray(objString).getJSONObject(0);
+			}
+			return null;
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		} catch (URISyntaxException e) {
+			logger.error(e.getMessage());
+		}
+		return null;
+
+	}
+
+	public JSONArray retrieveDocuments(String datasetId)
+			throws URISyntaxException, ClientProtocolException, IOException {
+		logger.trace("Method retrieveDocument invoked");
+
+		CredentialsProvider provider = new BasicCredentialsProvider();
+		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+		provider.setCredentials(AuthScope.ANY, credentials);
+		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
+		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
+
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath("/browse/" + datasetId);
+		builder.setParameter("pagesize", "100");
+
+		HttpResponse response;
+		JSONArray result = new JSONArray();
+
+		int pageNumber = 1;
+		logger.trace("Start browsing");
+		while (true) {
+
+			logger.debug("Calling page number {}", pageNumber);
+
+			builder.setParameter("page", String.valueOf(pageNumber));
+			HttpGet getRequest = new HttpGet(builder.build());
+			getRequest.addHeader("Content-Type", "application/json");
+			getRequest.setConfig(requestConfig);
+			response = client.execute(getRequest);
+			logger.debug("Response: {}", response.getStatusLine().toString());
+
+			final HttpEntity resEntity = response.getEntity();
+
+			if (resEntity != null) {
+				logger.trace("Response content length: " + resEntity.getContentLength());
+				String objString = new String(EntityUtils.toByteArray(resEntity));
+				logger.trace("Result {}", objString);
+				JSONArray chunk = new JSONObject(objString).getJSONArray("results");
+				chunk.forEach(o -> result.put(o));
+				if (chunk.length() == 0) {
+					break;
+				}
+			} else {
+				break;
+			}
+
+			pageNumber++;
+		}
+
+		return result;
 
 	}
 

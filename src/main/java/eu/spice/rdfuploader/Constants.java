@@ -10,7 +10,8 @@ public class Constants {
 				TARGET_NAMESPACE = "target-namespace", HISTORY = "history", DOCUMENT_ID = "document-id",
 				MESSAGE = "message", TIMESTAMP = "timestamp", SCHEDULED = "scheduled", SUBMITTED_BY = "submitted-by",
 				MODIFIED_BY = "modified-by", COMPLETE = "COMPLETE", ERROR = "ERROR",
-				TARGET_NAMED_GRAPH = "target-named-graph", CLEAR_GRAPH = "clear-graph";
+				TARGET_NAMED_GRAPH = "target-named-graph", CLEAR_GRAPH = "clear-graph", JOB_TYPE = "job-type",
+				REBUILDGRAPH = "REBUILDGRAPH", REBUILD_DATASET = "REBUILDDATASET";
 
 	}
 

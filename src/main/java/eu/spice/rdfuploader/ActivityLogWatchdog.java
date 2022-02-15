@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 
@@ -21,21 +20,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.spice.rdfuploader.Constants.RDFJobsConstants;
-import eu.spice.rdfuploader.uploaders.Utils;
 import eu.spice.uploaders.rdfuploader.model.ConstructRequest;
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestCreate;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestDelete;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestUpdate;
+import eu.spice.uploaders.rdfuploader.model.RebuildGraphRequest;
+import eu.spice.uploaders.rdfuploader.model.RebuildNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.Request;
 
 public class ActivityLogWatchdog implements Runnable {
 
 	private static final Logger logger = LoggerFactory.getLogger(ActivityLogWatchdog.class);
 
-	private String lastTimestampFile, repositoryURL, baseResource, ontologyURIPRefix, rdf_jobs_dataset;
+	private String lastTimestampFile;
 
-	private boolean useNamedresources = true;
 	private RDFUploaderContext context;
 
 	private static final String AL_PREFIX = "https://mkdf.github.io/context/activity-log#";
@@ -45,7 +44,7 @@ public class ActivityLogWatchdog implements Runnable {
 			UPDATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Update"),
 			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete");
 
-	//@f:off
+	// @f:off
 	private static String getLastOperationsQuery =
 			"PREFIX al:    <"+AL_PREFIX+"> "
 			+ "SELECT DISTINCT ?ale ?datasetId ?docId ?timestamp ?operationType ?payload ?endpoint { "
@@ -53,6 +52,7 @@ public class ActivityLogWatchdog implements Runnable {
 			+ "?ale al:datasetId  ?datasetId . "
 			+ "?ale a ?operationType . "
 			+ "?ale al:timestamp ?timestamp . "
+			+ "?httpRequest al:agent ?agent . FILTER NOT EXISTS {?agent al:key \"datahub-admin\"}"
 			+ "OPTIONAL{?ale al:documentId ?docId .}"
 			+ "OPTIONAL{?httpRequest al:payload ?payload . }"
 			+ "OPTIONAL{?httpRequest al:endpoint ?endpoint . }" // TODO needed to overcome Issue #5 https://github.com/spice-h2020/linked-data-hub-env-docker/issues/5
@@ -60,27 +60,15 @@ public class ActivityLogWatchdog implements Runnable {
 			+ "FILTER (?timestamp > 3000)" // TODO needed to overcome the bug related to the timestamp Issue #4 https://github.com/spice-h2020/linked-data-hub-env-docker/issues/4
 			+ "} "
 			+ "ORDER BY ASC(?timestamp)";
-	//@f:on
+	// @f:on
 
 	private BlockingQueue<Request> requests;
-	private Properties blazegraphProperties;
 
 	public ActivityLogWatchdog(RDFUploaderContext context, BlockingQueue<Request> requests) throws IOException {
 		logger.trace("constructor invoked");
 		this.requests = requests;
 		this.context = context;
-		init(context.getConf());
-	}
-
-	private void init(RDFUploaderConfiguration c) throws IOException {
-		logger.trace("init invoked");
-		blazegraphProperties = Utils.loadProperties(c.getBlazegraphPropertiesFilepath());
-		lastTimestampFile = c.getLastTimestampFile();
-		repositoryURL = c.getRepositoryURL();
-		baseResource = c.getBaseResource();
-		ontologyURIPRefix = c.getOntologyURIPRefix();
-		useNamedresources = c.isUseNamedresources();
-		rdf_jobs_dataset = c.getRDFJobsDataset();
+		lastTimestampFile = context.getConf().getLastTimestampFile();
 	}
 
 	@Override
@@ -92,8 +80,7 @@ public class ActivityLogWatchdog implements Runnable {
 		} catch (IOException e1) {
 			logger.error("Exception while getting last timestamp", e1);
 		}
-		logger.trace("Last timestamp " + lastTimestamp);
-
+		logger.trace("Last timestamp {} number of requests {}", lastTimestamp, this.requests.size());
 		try {
 			logger.trace("Getting activity log entities from browse");
 			Model m = context.getDbClient().getActivityLogEntitiesFromBrowse(lastTimestamp);
@@ -106,13 +93,14 @@ public class ActivityLogWatchdog implements Runnable {
 				logger.trace("Processing " + qs.get("operationType").asResource().getLocalName() + " operation "
 						+ qs.get("ale").asResource().getLocalName() + " with timestamp " + lastTimestamp);
 				String datasetIdentifier = qs.get("datasetId").asLiteral().getString();
-				logger.trace("Request for the dataset {}", datasetIdentifier);
-				String blazegraphNamespace = context.getBlazegraphNamespace(datasetIdentifier);
 				Resource operationType = qs.get("operationType").asResource();
-				if (checkRDFJobs(datasetIdentifier)) {
-					enqueueRDFJobRequest(qs, operationType);
+				logger.trace("Request for the dataset {} - {}", datasetIdentifier, operationType);
+				if (datasetIdentifier.equals(context.getConf().getRDFJobsDataset())) {
+					if (!operationType.equals(CREATE_DATASET)) {
+						enqueueRDFJobRequest(qs, operationType);
+					}
 				} else {
-					enqueueRDFUploaderRequest(qs, datasetIdentifier, blazegraphNamespace, operationType);
+					enqueueRDFUploaderRequest(qs, datasetIdentifier, operationType);
 				}
 			}
 			saveLastTimestamp(lastTimestamp);
@@ -122,52 +110,81 @@ public class ActivityLogWatchdog implements Runnable {
 		}
 	}
 
-	void enqueueRDFUploaderRequest(QuerySolution qs, String datasetIdentifier, String blazegraphNamespace,
-			Resource operationType) throws InterruptedException {
+	void enqueueRDFUploaderRequest(QuerySolution qs, String datasetIdentifier, Resource operationType)
+			throws InterruptedException {
 		if (operationType.equals(CREATE_DATASET)) {
 			logger.trace("Create Dataset");
-			this.requests
-					.put(new CreateNamespaceRequest(blazegraphNamespace, repositoryURL, blazegraphProperties, context));
+			this.requests.put(new CreateNamespaceRequest(datasetIdentifier, context));
 		} else if (operationType.equals(CREATE)) {
 			String payload = qs.get("payload").asLiteral().getString();
-			createDocumentRequest(qs, datasetIdentifier, blazegraphNamespace, payload);
+			logger.trace("Create Document");
+			String docId = qs.get("docId").asLiteral().getString();
+			JSONRequestCreate request = new JSONRequestCreate(datasetIdentifier, docId, new JSONObject(payload),
+					context);
+//			if (useNamedresources) {
+//				logger.trace("Use named resources");
+//				request.setRootResourceURI(context.getRootURI(datasetIdentifier, docId));
+//			}
+			this.requests.put(request);
 		} else if (operationType.equals(DELETE)) {
 			logger.trace("Delete Document");
 			// TODO remove this as soon as issue 5 is addressed
 			String endpoint = qs.get("endpoint").asLiteral().getString();
 			String[] split = endpoint.split("/");
 			String docId = split[split.length - 1];
-			this.requests.put(new JSONRequestDelete(blazegraphNamespace, repositoryURL,
-					context.getGraphURI(datasetIdentifier, docId), blazegraphProperties, context));
+			this.requests.put(new JSONRequestDelete(datasetIdentifier, docId, context));
 			logger.trace("{}", this.requests.size());
 		} else if (operationType.equals(UPDATE)) {
 			logger.trace("Update Document");
 			String payload = qs.get("payload").asLiteral().getString();
 			String docId = qs.get("docId").asLiteral().getString();
-			JSONRequestUpdate request = new JSONRequestUpdate(blazegraphNamespace, repositoryURL,
-					context.getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
-					getOntologyURIPrefix(datasetIdentifier, docId), context);
-			if (useNamedresources) {
-				logger.trace("Use named resources");
-				request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
-			}
+			JSONRequestUpdate request = new JSONRequestUpdate(datasetIdentifier, docId, new JSONObject(payload),
+					context);
+//			if (useNamedresources) {
+//				logger.trace("Use named resources");
+//				request.setRootResourceURI(context.getRootURI(datasetIdentifier, docId));
+//			}
 			this.requests.put(request);
 		}
 	}
 
 	void enqueueRDFJobRequest(QuerySolution qs, Resource operationType) {
+		logger.trace("Payload {}", qs.get("payload").asLiteral().getString());
+		JSONObject payload = new JSONObject(qs.get("payload").asLiteral().getString());
 		String docId = qs.get("docId").asLiteral().getString();
-		String payload = qs.get("payload").asLiteral().getString();
-		if (operationType.equals(CREATE_DATASET)) {
-			// DO NOP
-		} else if (operationType.equals(CREATE)) {
-			createConstructJobRequest(docId, payload);
-		} else if (operationType.equals(DELETE)) {
-			removingJob(docId);
-		} else if (operationType.equals(UPDATE)) {
-			removingJob(docId);
-			createConstructJobRequest(docId, payload);
+
+		if (payload.getString(RDFJobsConstants.JOB_TYPE).equals(RDFJobsConstants.CONSTRUCT)) {
+			logger.trace("Construct JOB");
+			if (operationType.equals(CREATE)) {
+				createConstructJobRequest(docId, payload);
+			} else if (operationType.equals(DELETE)) {
+				removingJob(docId);
+			} else if (operationType.equals(UPDATE)) {
+				removingJob(docId);
+				createConstructJobRequest(docId, payload);
+			}
+		} else if (payload.getString(RDFJobsConstants.JOB_TYPE).equals(RDFJobsConstants.REBUILDGRAPH)) {
+			logger.trace("REBUILD GRAPH JOB");
+			if (operationType.equals(CREATE)) {
+				createRebuildGraphJobRequest(docId, payload);
+			} else if (operationType.equals(DELETE)) {
+				removingJob(docId);
+			} else if (operationType.equals(UPDATE)) {
+				removingJob(docId);
+				createRebuildGraphJobRequest(docId, payload);
+			}
+		} else if (payload.getString(RDFJobsConstants.JOB_TYPE).equals(RDFJobsConstants.REBUILD_DATASET)) {
+			logger.trace("REBUILDNAMESPACE GRAPH JOB");
+			if (operationType.equals(CREATE)) {
+				createRebuildNamespaceJobRequest(docId, payload);
+			} else if (operationType.equals(DELETE)) {
+				removingJob(docId);
+			} else if (operationType.equals(UPDATE)) {
+				removingJob(docId);
+				createRebuildNamespaceJobRequest(docId, payload);
+			}
 		}
+
 	}
 
 	void removingJob(String docId) {
@@ -181,54 +198,51 @@ public class ActivityLogWatchdog implements Runnable {
 		logger.trace("Job {} removed? {}", docId, removed);
 	}
 
-	void createConstructJobRequest(String docId, String payload) {
+	void createConstructJobRequest(String docId, JSONObject jobj) {
 		logger.trace("Create Job");
-		logger.trace("DocId {} Payload {}", docId, payload);
-		JSONObject jobj = new JSONObject(payload);
-
-		// If the status of the request is pending, then create a job and put it into
-		// the queue.
+		logger.trace("DocId {} Payload {}", docId, jobj);
 		if (jobj.getString(RDFJobsConstants.STATUS).equals(RDFJobsConstants.PENDING)) {
 
-			// Update status of the job to processing
 			jobj.put(Constants.RDFJobsConstants.STATUS, Constants.RDFJobsConstants.PROCESSING);
-			context.getDbClient().updateDocument(rdf_jobs_dataset, docId, jobj);
+			context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), docId, jobj);
 
 			try {
-				ConstructRequest cr = new ConstructRequest(jobj, docId, this.context);
+				ConstructRequest cr = new ConstructRequest(docId, jobj, this.context);
 				this.requests.put(cr);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
 		}
-
 	}
 
-	void createDocumentRequest(QuerySolution qs, String datasetIdentifier, String blazegraphNamespace, String payload)
-			throws InterruptedException {
-		logger.trace("Create Document");
-		String docId = qs.get("docId").asLiteral().getString();
-		JSONRequestCreate request = new JSONRequestCreate(blazegraphNamespace, repositoryURL,
-				context.getGraphURI(datasetIdentifier, docId), blazegraphProperties, new JSONObject(payload),
-				getOntologyURIPrefix(datasetIdentifier, docId), context);
-		if (useNamedresources) {
-			logger.trace("Use named resources");
-			request.setRootResourceURI(getRootURI(datasetIdentifier, docId));
+	void createRebuildGraphJobRequest(String docId, JSONObject jobj) {
+		logger.trace("Creting rebuild graph job");
+		logger.trace("DocId {} Payload {}", docId, jobj);
+		if (jobj.getString(RDFJobsConstants.STATUS).equals(RDFJobsConstants.PENDING)) {
+			jobj.put(Constants.RDFJobsConstants.STATUS, Constants.RDFJobsConstants.PROCESSING);
+			context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), docId, jobj);
+			try {
+				RebuildGraphRequest r = new RebuildGraphRequest(docId, jobj, this.context);
+				this.requests.put(r);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		this.requests.put(request);
 	}
 
-	private boolean checkRDFJobs(String datasetIdentifier) {
-		return datasetIdentifier.equals(rdf_jobs_dataset);
-	}
-
-	private String getRootURI(String datasetId, String docId) {
-		return baseResource + datasetId + "/" + docId;
-	}
-
-	private String getOntologyURIPrefix(String datasetId, String docId) {
-		return ontologyURIPRefix + datasetId + "/" + docId + "/";
+	void createRebuildNamespaceJobRequest(String docId, JSONObject jobj) {
+		logger.trace("Creting rebuild namespace job");
+		logger.trace("DocId {} Payload {}", docId, jobj);
+		if (jobj.getString(RDFJobsConstants.STATUS).equals(RDFJobsConstants.PENDING)) {
+			jobj.put(Constants.RDFJobsConstants.STATUS, Constants.RDFJobsConstants.PROCESSING);
+			context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), docId, jobj);
+			try {
+				RebuildNamespaceRequest r = new RebuildNamespaceRequest(docId, jobj, this.context);
+				this.requests.put(r);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private Integer getLastTimestamp() throws IOException {

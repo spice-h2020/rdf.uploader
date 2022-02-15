@@ -6,15 +6,28 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.Properties;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.sparqlanything.json.JSONTriplifier;
+import com.github.sparqlanything.model.BaseFacadeXBuilder;
+import com.github.sparqlanything.model.IRIArgument;
+import com.github.sparqlanything.model.TriplifierHTTPException;
 
 import eu.spice.rdfuploader.Constants.RDFJobsConstants;
 
 public class Utils {
 
+	private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
 	public static Properties loadProperties(String resource) throws IOException {
 		Properties p = new Properties();
@@ -36,6 +49,35 @@ public class Utils {
 		message.put(RDFJobsConstants.TIMESTAMP, System.currentTimeMillis());
 		history.put(message);
 		obj.put(RDFJobsConstants.HISTORY, history);
+	}
+
+	public static Model readOrTriplifyJSONObject(JSONObject obj, String root, String ontologyURIPrefix)
+			throws IOException, TriplifierHTTPException {
+		logger.debug("Update Dataset Request");
+
+		JSONTriplifier jt = new JSONTriplifier();
+		Properties p = new Properties();
+		p.setProperty(IRIArgument.CONTENT.toString(), obj.toString());
+		p.setProperty(IRIArgument.NAMESPACE.toString(), ontologyURIPrefix);
+		if (root != null) {
+			logger.trace("Setting root URI {}", root);
+			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
+			p.setProperty(IRIArgument.ROOT.toString(), root);
+
+		}
+
+		Model m = ModelFactory.createDefaultModel();
+		logger.trace("Reading as JSON-LD");
+		RDFDataMgr.read(m, new StringReader(obj.toString()), "", Lang.JSONLD);
+		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
+		if (m.size() == 0) {
+			logger.trace("Trying to transform JSON document to RDF.");
+			m = ModelFactory
+					.createModelForGraph(jt.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph());
+			logger.trace("Read " + m.size() + " triples from JSON!");
+		}
+		
+		return m;
 	}
 
 }

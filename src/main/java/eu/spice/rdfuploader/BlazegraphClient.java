@@ -47,6 +47,11 @@ public class BlazegraphClient {
 
 	public void uploadModel(Model m, String namespace, String graphURI, Properties namespaceProperties)
 			throws Exception {
+		uploadModel(m, namespace, graphURI, namespaceProperties, false);
+	}
+
+	public void uploadModel(Model m, String namespace, String graphURI, Properties namespaceProperties,
+			boolean clearGraph) throws Exception {
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
 		RemoteRepository rr = createAndGetRemoteRepositoryForNamespace(manager, namespace, namespaceProperties);
 		String rdfFile = RDFUploaderConfiguration.getInstance().getTmpFolder() + "/" + System.nanoTime() + ".nt";
@@ -55,6 +60,11 @@ public class BlazegraphClient {
 			String nqFile = RDFUploaderConfiguration.getInstance().getTmpFolder() + "/" + System.nanoTime() + ".nq";
 			RDFDataMgr.writeQuads(new FileOutputStream(new File(nqFile)), new IteratorQuadFromTripleIterator(
 					RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.NT, ""), graphURI));
+
+			if (clearGraph) {
+				rr.prepareUpdate("CLEAR GRAPH <" + graphURI + ">").evaluate();
+			}
+
 			rr.add(new RemoteRepository.AddOp(new File(nqFile), RDFFormat.NQUADS));
 			new File(nqFile).delete();
 		} else {
@@ -71,6 +81,16 @@ public class BlazegraphClient {
 	public boolean namespaceExists(String namespace) throws Exception {
 		RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
 		boolean result = namespaceExists(repo, namespace);
+		repo.close();
+		return result;
+	}
+
+	public boolean dropNamespace(String namespace) throws Exception {
+		RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
+		boolean result = namespaceExists(repo, namespace);
+		if (result) {
+			repo.deleteRepository(namespace);
+		}
 		repo.close();
 		return result;
 	}
@@ -113,5 +133,12 @@ public class BlazegraphClient {
 		logger.trace("CLEAR graph " + graphURI + " completed!");
 		manager.close();
 	}
+
+//	public void dropAllNamespaces() throws Exception {
+//		RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
+//		GraphQueryResult gqr = repo.getRepositoryDescriptions();
+//		Map<String, String> namespaces = gqr.getNamespaces();
+//		namespaces.forEach((k, v) -> System.out.println(k + " " + v));
+//	}
 
 }

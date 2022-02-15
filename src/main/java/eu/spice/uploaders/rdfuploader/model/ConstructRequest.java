@@ -23,7 +23,7 @@ public class ConstructRequest implements Request {
 
 	private static final Logger logger = LoggerFactory.getLogger(ConstructRequest.class);
 
-	public ConstructRequest(JSONObject jobj, String docIdJob, RDFUploaderContext context) {
+	public ConstructRequest(String docIdJob, JSONObject jobj, RDFUploaderContext context) {
 		super();
 		this.jobj = jobj;
 		this.docIdJob = docIdJob;
@@ -45,7 +45,7 @@ public class ConstructRequest implements Request {
 
 		// Run the query
 		String query = jobj.getString(Constants.RDFJobsConstants.QUERY);
-		logger.trace("Job type {}, query: {}", jobj.getString("job-type"), query);
+		logger.trace("Job type {}, query: {}", jobj.getString(RDFJobsConstants.JOB_TYPE), query);
 
 		try {
 
