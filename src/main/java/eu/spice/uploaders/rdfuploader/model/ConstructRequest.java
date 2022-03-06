@@ -30,12 +30,10 @@ public class ConstructRequest implements Request {
 		this.context = context;
 	}
 
-	@Override
 	public String getTargetNamespace() {
 		return jobj.getString(RDFJobsConstants.TARGET_NAMESPACE);
 	}
 
-	@Override
 	public String getRepositoryURL() {
 		return context.getBlazegraphClient().getRepositoryURL();
 	}

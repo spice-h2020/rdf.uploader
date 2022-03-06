@@ -47,7 +47,7 @@ public class JSONRequestCreate implements Request {
 		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 		Model m = Utils.readOrTriplifyJSONObject(payload, root, ontologyPrefix);
 		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, false);
-		logger.trace("Create Dataset Request - Accomplished");
+		logger.trace("Create Graph Request - Accomplished");
 	}
 
 	@Override
@@ -55,12 +55,10 @@ public class JSONRequestCreate implements Request {
 		return null;
 	}
 
-	@Override
 	public String getTargetNamespace() {
 		return context.getBlazegraphNamespace(dataset);
 	}
 
-	@Override
 	public String getRepositoryURL() {
 		return context.getBlazegraphClient().getRepositoryURL();
 	}

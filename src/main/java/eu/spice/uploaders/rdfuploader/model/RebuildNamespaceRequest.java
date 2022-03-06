@@ -29,7 +29,6 @@ public class RebuildNamespaceRequest implements Request {
 		this.jobId = jobId;
 	}
 
-	@Override
 	public String getTargetNamespace() {
 		return context.getBlazegraphNamespace(job.getString(RDFJobsConstants.DATASET));
 	}
@@ -39,7 +38,6 @@ public class RebuildNamespaceRequest implements Request {
 		return jobId;
 	}
 
-	@Override
 	public String getRepositoryURL() {
 		return context.getBlazegraphClient().getRepositoryURL();
 	}

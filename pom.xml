@@ -5,8 +5,12 @@
 
 	<groupId>eu.spice</groupId>
 	<artifactId>rdf.uploader</artifactId>
-	<version>0.2.0</version>
+	<version>0.3.0</version>
 	<packaging>jar</packaging>
+
+	<properties>
+		<sparqlanything.version>0.6.0</sparqlanything.version>
+	</properties>
 
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
@@ -93,8 +97,152 @@
 		<dependency>
 			<groupId>com.github.sparqlanything</groupId>
 			<artifactId>sparql-anything-json</artifactId>
-			<version>0.4.1</version>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-engine</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-metadata</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-csv</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-xml</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-docs</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-html</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-text</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-archive</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-binary</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-spreadsheet</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.sparqlanything</groupId>
+			<artifactId>sparql-anything-rdf</artifactId>
+			<version>${sparqlanything.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-simple</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 
 		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
 		<dependency>
@@ -170,6 +318,9 @@
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.36</version>
 		</dependency>
+
+
+
 
 
 		<dependency>

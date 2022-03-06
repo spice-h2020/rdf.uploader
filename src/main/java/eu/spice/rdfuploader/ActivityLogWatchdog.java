@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.spice.rdfuploader.Constants.RDFJobsConstants;
 import eu.spice.uploaders.rdfuploader.model.ConstructRequest;
+import eu.spice.uploaders.rdfuploader.model.CreateFileRequest;
 import eu.spice.uploaders.rdfuploader.model.CreateNamespaceRequest;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestCreate;
 import eu.spice.uploaders.rdfuploader.model.JSONRequestDelete;
@@ -42,22 +43,24 @@ public class ActivityLogWatchdog implements Runnable {
 			.createResource(AL_PREFIX + "CreateDataset"),
 			CREATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Create"),
 			UPDATE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Update"),
-			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete");
+			DELETE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "Delete"),
+			CREATE_FILE = ModelFactory.createDefaultModel().createResource(AL_PREFIX + "CreateFile");
 
 	// @f:off
 	private static String getLastOperationsQuery =
 			"PREFIX al:    <"+AL_PREFIX+"> "
-			+ "SELECT DISTINCT ?ale ?datasetId ?docId ?timestamp ?operationType ?payload ?endpoint { "
+			+ "SELECT DISTINCT ?ale ?datasetId ?docId ?timestamp ?operationType ?payload ?endpoint ?filename { "
 			+ "?ale al:request ?httpRequest . "
 			+ "?ale al:datasetId  ?datasetId . "
 			+ "?ale a ?operationType . "
 			+ "?ale al:timestamp ?timestamp . "
-			+ "?httpRequest al:agent ?agent . FILTER NOT EXISTS {?agent al:key \"datahub-admin\"}"
-			+ "OPTIONAL{?ale al:documentId ?docId .}"
-			+ "OPTIONAL{?httpRequest al:payload ?payload . }"
-			+ "OPTIONAL{?httpRequest al:endpoint ?endpoint . }" // TODO needed to overcome Issue #5 https://github.com/spice-h2020/linked-data-hub-env-docker/issues/5
-			+ "FILTER(?operationType IN (al:Create, al:Update, al:Delete, al:CreateDataset))"
-			+ "FILTER (?timestamp > 3000)" // TODO needed to overcome the bug related to the timestamp Issue #4 https://github.com/spice-h2020/linked-data-hub-env-docker/issues/4
+			+ "OPTIONAL {?ale al:filename ?filename . }"
+			+ "?httpRequest al:agent ?agent . FILTER NOT EXISTS {?agent al:key \"datahub-admin\"} "
+			+ "OPTIONAL{?ale al:documentId ?docId .} "
+			+ "OPTIONAL{?httpRequest al:payload ?payload . } "
+			+ "OPTIONAL{?httpRequest al:endpoint ?endpoint . } " // TODO needed to overcome Issue #5 https://github.com/spice-h2020/linked-data-hub-env-docker/issues/5
+			+ "FILTER(?operationType IN (al:Create, al:Update, al:Delete, al:CreateDataset, al:CreateFile)) "
+			+ "FILTER (?timestamp > 3000) " // TODO needed to overcome the bug related to the timestamp Issue #4 https://github.com/spice-h2020/linked-data-hub-env-docker/issues/4
 			+ "} "
 			+ "ORDER BY ASC(?timestamp)";
 	// @f:on
@@ -87,6 +90,7 @@ public class ActivityLogWatchdog implements Runnable {
 			logger.trace("Triples within the model {}", m.size());
 			QueryExecution qexec = QueryExecutionFactory.create(getLastOperationsQuery, m);
 			ResultSet rs = qexec.execSelect();
+			qexec = QueryExecutionFactory.create(getLastOperationsQuery, m);
 			while (rs.hasNext()) {
 				QuerySolution qs = rs.next();
 				lastTimestamp = qs.get("timestamp").asLiteral().getInt();
@@ -112,39 +116,34 @@ public class ActivityLogWatchdog implements Runnable {
 
 	void enqueueRDFUploaderRequest(QuerySolution qs, String datasetIdentifier, Resource operationType)
 			throws InterruptedException {
+		logger.trace("Processing {} activity", operationType.getLocalName());
 		if (operationType.equals(CREATE_DATASET)) {
-			logger.trace("Create Dataset");
 			this.requests.put(new CreateNamespaceRequest(datasetIdentifier, context));
 		} else if (operationType.equals(CREATE)) {
 			String payload = qs.get("payload").asLiteral().getString();
-			logger.trace("Create Document");
+			logger.trace("Payload {}", payload);
 			String docId = qs.get("docId").asLiteral().getString();
 			JSONRequestCreate request = new JSONRequestCreate(datasetIdentifier, docId, new JSONObject(payload),
 					context);
-//			if (useNamedresources) {
-//				logger.trace("Use named resources");
-//				request.setRootResourceURI(context.getRootURI(datasetIdentifier, docId));
-//			}
 			this.requests.put(request);
 		} else if (operationType.equals(DELETE)) {
-			logger.trace("Delete Document");
 			// TODO remove this as soon as issue 5 is addressed
 			String endpoint = qs.get("endpoint").asLiteral().getString();
 			String[] split = endpoint.split("/");
 			String docId = split[split.length - 1];
 			this.requests.put(new JSONRequestDelete(datasetIdentifier, docId, context));
-			logger.trace("{}", this.requests.size());
 		} else if (operationType.equals(UPDATE)) {
 			logger.trace("Update Document");
 			String payload = qs.get("payload").asLiteral().getString();
 			String docId = qs.get("docId").asLiteral().getString();
 			JSONRequestUpdate request = new JSONRequestUpdate(datasetIdentifier, docId, new JSONObject(payload),
 					context);
-//			if (useNamedresources) {
-//				logger.trace("Use named resources");
-//				request.setRootResourceURI(context.getRootURI(datasetIdentifier, docId));
-//			}
 			this.requests.put(request);
+		} else if (operationType.equals(CREATE_FILE)) {
+			String filename = qs.get("filename").asLiteral().getString().toString();
+			logger.trace("Filename  {}", filename);
+			CreateFileRequest r = new CreateFileRequest(filename, datasetIdentifier, context);
+			this.requests.put(r);
 		}
 	}
 

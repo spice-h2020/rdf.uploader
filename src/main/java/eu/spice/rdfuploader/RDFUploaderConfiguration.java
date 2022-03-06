@@ -17,7 +17,7 @@ public class RDFUploaderConfiguration {
 			blazegraphPropertiesFilepath = "src/main/resources/blazegraph.properties",
 			baseResource = "https://w3id.org/spice/resource/", baseGraph = baseResource + "graph/",
 			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder,
-			rdf_jobs_dataset;
+			rdf_jobs_dataset, saQueryFilepath;
 
 	private boolean useNamedresources = true, clean = false;
 
@@ -52,6 +52,7 @@ public class RDFUploaderConfiguration {
 			rdf_jobs_dataset = config.getString("rdf_jobs_dataset");
 			clean = config.getBoolean("clean", false);
 			initialDelay = config.getInt("initialDelay", 30);
+			saQueryFilepath = config.getString("sa_query_filepath");
 
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
@@ -215,6 +216,10 @@ public class RDFUploaderConfiguration {
 
 	public int getInitalDealy() {
 		return initialDelay;
+	}
+
+	public String getSPARQLAnythingFilepath() {
+		return saQueryFilepath;
 	}
 
 }

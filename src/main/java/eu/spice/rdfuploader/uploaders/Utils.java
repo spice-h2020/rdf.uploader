@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.jena.graph.Graph;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
@@ -18,9 +21,12 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.sparqlanything.engine.FacadeX;
 import com.github.sparqlanything.json.JSONTriplifier;
-import com.github.sparqlanything.model.BaseFacadeXBuilder;
+import com.github.sparqlanything.model.BaseFacadeXGraphBuilder;
+import com.github.sparqlanything.model.FacadeXGraphBuilder;
 import com.github.sparqlanything.model.IRIArgument;
+import com.github.sparqlanything.model.Triplifier;
 import com.github.sparqlanything.model.TriplifierHTTPException;
 
 import eu.spice.rdfuploader.Constants.RDFJobsConstants;
@@ -53,7 +59,6 @@ public class Utils {
 
 	public static Model readOrTriplifyJSONObject(JSONObject obj, String root, String ontologyURIPrefix)
 			throws IOException, TriplifierHTTPException {
-		logger.debug("Update Dataset Request");
 
 		JSONTriplifier jt = new JSONTriplifier();
 		Properties p = new Properties();
@@ -72,12 +77,59 @@ public class Utils {
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
 		if (m.size() == 0) {
 			logger.trace("Trying to transform JSON document to RDF.");
-			m = ModelFactory
-					.createModelForGraph(jt.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph());
+
+			// Version 0.6.0
+			FacadeXGraphBuilder builder = new BaseFacadeXGraphBuilder("uploader", p);
+			jt.triplify(p, builder);
+			Graph g = builder.getDatasetGraph().getDefaultGraph();
+			m = ModelFactory.createModelForGraph(g);
+
+//			m = ModelFactory
+//					.createModelForGraph(jt.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph());
+
 			logger.trace("Read " + m.size() + " triples from JSON!");
 		}
-		
+
 		return m;
+	}
+
+	public static Model triplifyFile(File file, String root, String ontologyURIPrefix) throws IOException,
+			TriplifierHTTPException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+
+		Properties p = new Properties();
+		p.setProperty(IRIArgument.LOCATION.toString(), file.getAbsolutePath());
+		p.setProperty(IRIArgument.NAMESPACE.toString(), ontologyURIPrefix);
+		if (root != null) {
+			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
+			p.setProperty(IRIArgument.ROOT.toString(), root);
+		}
+
+		logger.trace("Registry==null? {}", FacadeX.Registry == null);
+		logger.trace("Registered extensions {}", FacadeX.Registry.getRegisteredExtensions());
+		String triplifierClass = FacadeX.Registry
+				.getTriplifierForExtension(FilenameUtils.getExtension(file.getAbsolutePath()));
+		logger.trace("Triplifier class {} for file {}", triplifierClass, file.getAbsolutePath());
+		Triplifier t = (Triplifier) Class.forName(triplifierClass).getConstructor().newInstance();
+
+//		Graph g = t.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph();
+
+		// Version 0.6.0
+		FacadeXGraphBuilder builder = new BaseFacadeXGraphBuilder("uploader", p);
+		t.triplify(p, builder);
+		Graph g = builder.getDatasetGraph().getDefaultGraph();
+
+		logger.trace("{} triples generated from file {}", g.size(), file.getName());
+
+		return ModelFactory.createModelForGraph(g);
+	}
+
+	public static File makeTempFolderForDataset(String tempFolder, String dataset) {
+		File tempFolderDataset = new File(tempFolder + "/" + dataset);
+		if (!tempFolderDataset.exists()) {
+			tempFolderDataset.mkdirs();
+		}
+		return tempFolderDataset;
 	}
 
 }

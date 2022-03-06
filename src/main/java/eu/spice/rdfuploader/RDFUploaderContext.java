@@ -1,17 +1,21 @@
 
 package eu.spice.rdfuploader;
 
+import java.io.IOException;
+
 public class RDFUploaderContext {
 
 	private RDFUploaderConfiguration conf;
 	private DocumentDBClient dbClient;
 	private BlazegraphClient blazegraphClient;
+	private SPARQLAnythingClient saClient;
 
-	public RDFUploaderContext(RDFUploaderConfiguration conf) {
+	public RDFUploaderContext(RDFUploaderConfiguration conf) throws IOException {
 		this.dbClient = new DocumentDBClient(conf.getUsername(), conf.getPassword(), conf.getApif_uri_scheme(),
 				conf.getApif_host(), conf.getActivity_log_path(), conf.getBaseNS());
 		this.blazegraphClient = new BlazegraphClient(conf.getRepositoryURL(), conf.getBlazegraphNamespacePrefix());
 		this.conf = conf;
+		this.saClient = SPARQLAnythingClient.getInstance(conf);
 	}
 
 	public RDFUploaderConfiguration getConf() {
@@ -51,4 +55,9 @@ public class RDFUploaderContext {
 	public String getOntologyURIPrefix(String datasetId, String docId) {
 		return conf.getOntologyURIPRefix() + datasetId + "/" + docId + "/";
 	}
+
+	public SPARQLAnythingClient getSPARQLAnythingClient() {
+		return saClient;
+	}
+
 }

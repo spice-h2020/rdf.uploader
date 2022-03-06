@@ -12,7 +12,7 @@ cd rdf.uploader/
 mvn clean install
 ```
 
-Before running RDF Uploader make sure that [SPARQL Anything](https://github.com/SPARQL-Anything/sparql.anything) is installed on your machine.
+Before running RDF Uploader make sure that [SPARQL Anything](https://github.com/SPARQL-Anything/sparql.anything) v0.6.0 is installed on your machine.
 
 ### Configuration
 
@@ -69,6 +69,12 @@ blazegraphNamespacePrefix=spice_
 
 ## UUID of the dataset used for sending commands to the uploader
 uuidDatasetCommands=cf0392e1-1340-4024-90eb-d9e0f5120cfd
+
+## UUID of the dataset used for sending commands to the uploader
+rdf_jobs_dataset=spice_rdfjobs
+
+## Query defined according SPARQL Anything conventions for transforming files
+sa_query_filepath=src/main/resources/saQuery.sparql
 
 ```
 

@@ -30,12 +30,10 @@ public class JSONRequestDelete implements Request {
 		return null;
 	}
 
-	@Override
 	public String getTargetNamespace() {
 		return context.getBlazegraphNamespace(datasetId);
 	}
 
-	@Override
 	public String getRepositoryURL() {
 		return context.getBlazegraphClient().getRepositoryURL();
 	}

@@ -2,6 +2,8 @@
 package eu.spice.rdfuploader;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -69,10 +71,10 @@ public class DocumentDBClient {
 
 			if (lastTimestamp != null) {
 				builder.setParameter("query", "{ \"_timestamp\": {  \"$gt\":" + lastTimestamp
-						+ "  }, \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
+						+ "  }, \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}, {\"@type\":\"al:CreateFile\"}]}");
 			} else {
 				builder.setParameter("query",
-						"{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"}]}");
+						"{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"},  {\"@type\":\"al:CreateFile\"}]}");
 			}
 
 			builder.setParameter("pagesize", "100");
@@ -249,8 +251,42 @@ public class DocumentDBClient {
 
 			pageNumber++;
 		}
-
 		return result;
+	}
+
+	public void downloadFile(String datasetId, String filename, File fileOut)
+			throws URISyntaxException, ClientProtocolException, IOException {
+
+		logger.trace("Method downloadDocument invoked");
+
+		CredentialsProvider provider = new BasicCredentialsProvider();
+		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+		provider.setCredentials(AuthScope.ANY, credentials);
+		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
+		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
+
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath("/file/" + datasetId + "/" + filename);
+
+		HttpGet getRequest = new HttpGet();
+
+		getRequest.setURI(builder.build());
+		getRequest.setConfig(requestConfig);
+		HttpHost host = new HttpHost(apif_host);
+		HttpResponse response = client.execute(host, getRequest);
+		final HttpEntity resEntity = response.getEntity();
+		if (resEntity != null) {
+			logger.trace("Response content length: " + resEntity.getContentLength());
+			String objString = new String(EntityUtils.toByteArray(resEntity));
+			logger.trace("Result {}", objString);
+			FileOutputStream fos = new FileOutputStream(fileOut);
+			fos.write(objString.getBytes());
+			fos.flush();
+			fos.close();
+		}
 
 	}
 

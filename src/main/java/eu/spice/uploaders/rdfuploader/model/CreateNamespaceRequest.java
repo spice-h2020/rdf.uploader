@@ -38,7 +38,6 @@ public class CreateNamespaceRequest implements Request {
 		return null;
 	}
 
-	@Override
 	public String getTargetNamespace() {
 		return context.getBlazegraphNamespace(datasetId);
 	}

@@ -1,0 +1,7 @@
+CONSTRUCT {
+	?s ?p ?o 
+} WHERE {
+	SERVICE<x-sparql-anything:location=%s,root=%s,namespace=%s,blank-nodes=false> {
+		?s ?p ?o
+	}
+}
