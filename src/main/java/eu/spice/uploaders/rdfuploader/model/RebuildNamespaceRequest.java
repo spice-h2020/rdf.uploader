@@ -70,12 +70,12 @@ public class RebuildNamespaceRequest implements Request {
 				JSONObject jsonObj = ((JSONObject) obj);
 				String documentId = jsonObj.getString("_id");
 				String datasetId = job.getString(RDFJobsConstants.DATASET);
-				String ontologyURI = context.getOntologyURIPrefix(datasetId, documentId);
+//				String ontologyURI = context.getOntologyURIPrefix(datasetId, documentId);
 				String rootURI = context.getRootURI(job.getString(RDFJobsConstants.DATASET), documentId);
 				String graphURI = context.getGraphURI(datasetId, documentId);
 
 				try {
-					Model m = Utils.readOrTriplifyJSONObject((JSONObject) obj, rootURI, ontologyURI);
+					Model m = Utils.readOrTriplifyJSONObject((JSONObject) obj, rootURI);
 					context.getBlazegraphClient().uploadModel(m, namespace, graphURI, blazegraphProperties);
 					Utils.addMessage(job, documentId + " uploaded");
 				} catch (Exception e) {

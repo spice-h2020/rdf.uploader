@@ -57,13 +57,13 @@ public class Utils {
 		obj.put(RDFJobsConstants.HISTORY, history);
 	}
 
-	public static Model readOrTriplifyJSONObject(JSONObject obj, String root, String ontologyURIPrefix)
+	public static Model readOrTriplifyJSONObject(JSONObject obj, String root)
 			throws IOException, TriplifierHTTPException {
 
 		JSONTriplifier jt = new JSONTriplifier();
 		Properties p = new Properties();
 		p.setProperty(IRIArgument.CONTENT.toString(), obj.toString());
-		p.setProperty(IRIArgument.NAMESPACE.toString(), ontologyURIPrefix);
+//		p.setProperty(IRIArgument.NAMESPACE.toString(), ontologyURIPrefix);
 		if (root != null) {
 			logger.trace("Setting root URI {}", root);
 			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
@@ -93,13 +93,12 @@ public class Utils {
 		return m;
 	}
 
-	public static Model triplifyFile(File file, String root, String ontologyURIPrefix) throws IOException,
+	public static Model triplifyFile(File file, String root) throws IOException,
 			TriplifierHTTPException, InstantiationException, IllegalAccessException, IllegalArgumentException,
 			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 
 		Properties p = new Properties();
 		p.setProperty(IRIArgument.LOCATION.toString(), file.getAbsolutePath());
-		p.setProperty(IRIArgument.NAMESPACE.toString(), ontologyURIPrefix);
 		if (root != null) {
 			p.setProperty(IRIArgument.BLANK_NODES.toString(), "false");
 			p.setProperty(IRIArgument.ROOT.toString(), root);

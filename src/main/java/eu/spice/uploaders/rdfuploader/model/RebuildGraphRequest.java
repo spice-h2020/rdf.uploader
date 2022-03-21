@@ -53,8 +53,9 @@ public class RebuildGraphRequest implements Request {
 			logger.trace("Triplifying document");
 			Model m;
 			try {
-				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentId),
-						context.getOntologyURIPrefix(datasetId, documentId));
+//				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentId),
+//						context.getOntologyURIPrefix(datasetId, documentId));
+				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentId));
 				logger.trace("Model size: {}", m.size());
 				logger.trace("Clearing and uploading model");
 				String graphURI = context.getGraphURI(datasetId, documentId);

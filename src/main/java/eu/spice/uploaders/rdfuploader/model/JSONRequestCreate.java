@@ -42,10 +42,10 @@ public class JSONRequestCreate implements Request {
 
 	public void accomplishRequest() throws Exception {
 		String root = context.getRootURI(dataset, docId);
-		String ontologyPrefix = context.getOntologyURIPrefix(dataset, docId);
+//		String ontologyPrefix = context.getOntologyURIPrefix(dataset, docId);
 		String graphURI = context.getGraphURI(dataset, docId);
 		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
-		Model m = Utils.readOrTriplifyJSONObject(payload, root, ontologyPrefix);
+		Model m = Utils.readOrTriplifyJSONObject(payload, root);
 		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, false);
 		logger.trace("Create Graph Request - Accomplished");
 	}

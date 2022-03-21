@@ -41,8 +41,8 @@ public class SPARQLAnythingClient {
 		return instance;
 	}
 
-	public Model triplifyFile(String location, String root, String namespace) {
-		String queryString = String.format(saQueryPattern, location, root, namespace);
+	public Model triplifyFile(String location, String root) {
+		String queryString = String.format(saQueryPattern, location, root);
 		Query query = QueryFactory.create(queryString);
 		logger.trace("Executing query \n{}", query.toString(Syntax.defaultQuerySyntax));
 		QueryExecution qExec = QueryExecutionFactory.create(query, kb);

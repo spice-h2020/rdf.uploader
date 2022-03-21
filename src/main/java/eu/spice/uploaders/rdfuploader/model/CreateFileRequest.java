@@ -33,7 +33,7 @@ public class CreateFileRequest implements Request {
 	public void accomplishRequest() throws Exception {
 
 		String root = context.getRootURI(dataset, filename);
-		String ontologyPrefix = context.getOntologyURIPrefix(dataset, filename);
+//		String ontologyPrefix = context.getOntologyURIPrefix(dataset, filename);
 		String graphURI = context.getGraphURI(dataset, filename);
 		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 		String namespace = context.getBlazegraphNamespace(dataset);
@@ -44,8 +44,7 @@ public class CreateFileRequest implements Request {
 		context.getDbClient().downloadFile(dataset, filename, downloadedFile);
 
 		// Triplify file
-		Model m = context.getSPARQLAnythingClient().triplifyFile(downloadedFile.getAbsolutePath(), root,
-				ontologyPrefix);
+		Model m = context.getSPARQLAnythingClient().triplifyFile(downloadedFile.getAbsolutePath(), root);
 
 		// Upload file
 		context.getBlazegraphClient().uploadModel(m, namespace, graphURI, namespaceProperties, true);
