@@ -41,7 +41,7 @@
 					<execution>
 						<id>rdf-uploader</id>
 						<configuration>
-							<outputFile>target/spice.rdf-uploader-v${version}.jar</outputFile>
+							<outputFile>target/spice.rdf-uploader-v${project.version}.jar</outputFile>
 							<shadedArtifactAttached>false</shadedArtifactAttached>
 							<transformers>
 								<transformer
