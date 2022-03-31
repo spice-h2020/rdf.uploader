@@ -123,9 +123,14 @@ public class ActivityLogWatchdog implements Runnable {
 			String payload = qs.get("payload").asLiteral().getString();
 			logger.trace("Payload {}", payload);
 			String docId = qs.get("docId").asLiteral().getString();
-			JSONRequestCreate request = new JSONRequestCreate(datasetIdentifier, docId, new JSONObject(payload),
-					context);
-			this.requests.put(request);
+			try {
+				JSONObject payloadObject = new JSONObject(payload);
+				JSONRequestCreate request = new JSONRequestCreate(datasetIdentifier, docId, payloadObject, context);
+				this.requests.put(request);
+			} catch (org.json.JSONException e) {
+				e.printStackTrace();
+				logger.error("Error {} while processing the payload {}", e.getMessage(), payload);
+			}
 		} else if (operationType.equals(DELETE)) {
 			// TODO remove this as soon as issue 5 is addressed
 			String endpoint = qs.get("endpoint").asLiteral().getString();

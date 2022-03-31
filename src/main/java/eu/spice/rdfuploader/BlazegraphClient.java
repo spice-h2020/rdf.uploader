@@ -52,26 +52,34 @@ public class BlazegraphClient {
 
 	public void uploadModel(Model m, String namespace, String graphURI, Properties namespaceProperties,
 			boolean clearGraph) throws Exception {
-		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
-		RemoteRepository rr = createAndGetRemoteRepositoryForNamespace(manager, namespace, namespaceProperties);
-		String rdfFile = RDFUploaderConfiguration.getInstance().getTmpFolder() + "/" + System.nanoTime() + ".nt";
-		m.write(new FileOutputStream(new File(rdfFile)), "NT");
-		if (graphURI != null) {
-			String nqFile = RDFUploaderConfiguration.getInstance().getTmpFolder() + "/" + System.nanoTime() + ".nq";
-			RDFDataMgr.writeQuads(new FileOutputStream(new File(nqFile)), new IteratorQuadFromTripleIterator(
-					RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.NT, ""), graphURI));
+		logger.trace("Creating Repository manager for URL {}", this.getRepositoryURL());
+		try {
+			RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
+			RemoteRepository rr = createAndGetRemoteRepositoryForNamespace(manager, namespace, namespaceProperties);
+			String rdfFile = RDFUploaderConfiguration.getInstance().getTmpFolder() + "/" + System.nanoTime() + ".nt";
+			m.write(new FileOutputStream(new File(rdfFile)), "NT");
+			if (graphURI != null) {
+				String nqFile = RDFUploaderConfiguration.getInstance().getTmpFolder() + "/" + System.nanoTime() + ".nq";
+				RDFDataMgr.writeQuads(new FileOutputStream(new File(nqFile)),
+						new IteratorQuadFromTripleIterator(
+								RDFDataMgr.createIteratorTriples(new FileInputStream(new File(rdfFile)), Lang.NT, ""),
+								graphURI));
 
-			if (clearGraph) {
-				rr.prepareUpdate("CLEAR GRAPH <" + graphURI + ">").evaluate();
+				if (clearGraph) {
+					rr.prepareUpdate("CLEAR GRAPH <" + graphURI + ">").evaluate();
+				}
+
+				rr.add(new RemoteRepository.AddOp(new File(nqFile), RDFFormat.NQUADS));
+				new File(nqFile).delete();
+			} else {
+				rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.NTRIPLES));
 			}
-
-			rr.add(new RemoteRepository.AddOp(new File(nqFile), RDFFormat.NQUADS));
-			new File(nqFile).delete();
-		} else {
-			rr.add(new RemoteRepository.AddOp(new FileInputStream(new File(rdfFile)), RDFFormat.NTRIPLES));
+			manager.close();
+			new File(rdfFile).delete();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
 		}
-		manager.close();
-		new File(rdfFile).delete();
 	}
 
 	public String getRepositoryURL() {

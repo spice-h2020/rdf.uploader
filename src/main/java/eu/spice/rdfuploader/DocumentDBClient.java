@@ -281,7 +281,7 @@ public class DocumentDBClient {
 		if (resEntity != null) {
 			logger.trace("Response content length: " + resEntity.getContentLength());
 			String objString = new String(EntityUtils.toByteArray(resEntity));
-			logger.trace("Result {}", objString);
+			//logger.trace("Result {}", objString);
 			FileOutputStream fos = new FileOutputStream(fileOut);
 			fos.write(objString.getBytes());
 			fos.flush();
