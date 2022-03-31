@@ -68,9 +68,6 @@ lastTimestampFile=${tmpFolder}/timestamp
 blazegraphNamespacePrefix=spice_
 
 ## UUID of the dataset used for sending commands to the uploader
-uuidDatasetCommands=cf0392e1-1340-4024-90eb-d9e0f5120cfd
-
-## UUID of the dataset used for sending commands to the uploader
 rdf_jobs_dataset=spice_rdfjobs
 
 ## Query defined according SPARQL Anything conventions for transforming files
