@@ -31,10 +31,10 @@ public class CreateFileRequest implements Request {
 
 	@Override
 	public void accomplishRequest() throws Exception {
-
-		String root = context.getRootURI(dataset, filename);
+		String filenameClean = basicEscaper.escape(filename);
+		String root = context.getRootURI(dataset, filenameClean);
 //		String ontologyPrefix = context.getOntologyURIPrefix(dataset, filename);
-		String graphURI = context.getGraphURI(dataset, filename);
+		String graphURI = context.getGraphURI(dataset, filenameClean);
 		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 		String namespace = context.getBlazegraphNamespace(dataset);
 

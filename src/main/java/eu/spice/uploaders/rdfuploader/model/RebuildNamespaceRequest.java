@@ -69,10 +69,11 @@ public class RebuildNamespaceRequest implements Request {
 
 				JSONObject jsonObj = ((JSONObject) obj);
 				String documentId = jsonObj.getString("_id");
+				String docIdClean = basicEscaper.escape(documentId);
 				String datasetId = job.getString(RDFJobsConstants.DATASET);
 //				String ontologyURI = context.getOntologyURIPrefix(datasetId, documentId);
-				String rootURI = context.getRootURI(job.getString(RDFJobsConstants.DATASET), documentId);
-				String graphURI = context.getGraphURI(datasetId, documentId);
+				String rootURI = context.getRootURI(job.getString(RDFJobsConstants.DATASET), docIdClean);
+				String graphURI = context.getGraphURI(datasetId, docIdClean);
 
 				try {
 					Model m = Utils.readOrTriplifyJSONObject((JSONObject) obj, rootURI);

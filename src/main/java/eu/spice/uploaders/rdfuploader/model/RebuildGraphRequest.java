@@ -43,11 +43,12 @@ public class RebuildGraphRequest implements Request {
 	@Override
 	public void accomplishRequest() {
 
-		String documentId = job.getString(RDFJobsConstants.DOCUMENT_ID);
+		String docId = job.getString(RDFJobsConstants.DOCUMENT_ID);
+		String documentIdClean = basicEscaper.escape(docId);
 		String datasetId = job.getString(RDFJobsConstants.DATASET);
-		JSONObject obj = context.getDbClient().retrieveDocument(datasetId, documentId);
+		JSONObject obj = context.getDbClient().retrieveDocument(datasetId, docId);
 
-		logger.trace("Rebuilding graph for docId {} in dataset {}", documentId, datasetId);
+		logger.trace("Rebuilding graph for docId {} in dataset {}", documentIdClean, datasetId);
 
 		if (obj != null) {
 			logger.trace("Triplifying document");
@@ -55,10 +56,10 @@ public class RebuildGraphRequest implements Request {
 			try {
 //				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentId),
 //						context.getOntologyURIPrefix(datasetId, documentId));
-				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentId));
+				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentIdClean));
 				logger.trace("Model size: {}", m.size());
 				logger.trace("Clearing and uploading model");
-				String graphURI = context.getGraphURI(datasetId, documentId);
+				String graphURI = context.getGraphURI(datasetId, documentIdClean);
 				Properties blazegraphProperties = Utils
 						.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 				context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, blazegraphProperties,
@@ -72,8 +73,8 @@ public class RebuildGraphRequest implements Request {
 			}
 
 		} else {
-			logger.error("Couldn't find document {}" + documentId + " " + datasetId);
-			Utils.addMessage(job, "Couldn't find document {}" + documentId + " " + datasetId);
+			logger.error("Couldn't find document {}" + docId + " " + datasetId);
+			Utils.addMessage(job, "Couldn't find document {}" + docId + " " + datasetId);
 			job.put(RDFJobsConstants.STATUS, RDFJobsConstants.ERROR);
 		}
 		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);

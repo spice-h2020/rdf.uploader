@@ -20,9 +20,10 @@ public class JSONRequestDelete implements Request {
 
 	public void accomplishRequest() throws Exception {
 		logger.debug("CLEAR graph " + context.getGraphURI(datasetId, docId));
+		String docIdClean = basicEscaper.escape(docId);
 		context.getBlazegraphClient().clearGraph(getTargetNamespace(),
 				Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath()),
-				context.getGraphURI(datasetId, docId));
+				context.getGraphURI(datasetId, docIdClean));
 	}
 
 	@Override

@@ -34,10 +34,11 @@ public class JSONRequestUpdate implements Request {
 
 	@Override
 	public void accomplishRequest() throws Exception {
-
-		String root = context.getRootURI(datasetId, docId);
+		String docIdClean = basicEscaper.escape(docId);
+		
+		String root = context.getRootURI(datasetId, docIdClean);
 //		String ontologyPrefix = context.getOntologyURIPrefix(datasetId, docId);
-		String graphURI = context.getGraphURI(datasetId, docId);
+		String graphURI = context.getGraphURI(datasetId, docIdClean);
 		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 		Model m = Utils.readOrTriplifyJSONObject(payload, root);
 		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, true);
