@@ -68,7 +68,7 @@ public class RebuildNamespaceRequest implements Request {
 			documents.forEach(obj -> {
 
 				JSONObject jsonObj = ((JSONObject) obj);
-				String documentId = jsonObj.getString("_id");
+				String documentId = jsonObj.get("_id").toString();
 				String docIdClean = basicEscaper.escape(documentId);
 				String datasetId = job.getString(RDFJobsConstants.DATASET);
 //				String ontologyURI = context.getOntologyURIPrefix(datasetId, documentId);
@@ -82,6 +82,7 @@ public class RebuildNamespaceRequest implements Request {
 				} catch (Exception e) {
 					logger.error("Error while processing job {}", e.getMessage());
 					Utils.addMessage(job, e.getMessage());
+					e.printStackTrace();
 				}
 
 			});
