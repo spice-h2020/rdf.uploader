@@ -75,27 +75,27 @@ public class Utils {
 		logger.trace("Reading as JSON-LD");
 		RDFDataMgr.read(m, new StringReader(obj.toString()), "", Lang.JSONLD);
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
-		if (m.size() == 0) {
-			logger.trace("Trying to transform JSON document to RDF.");
+//		if (m.size() == 0) {
+		logger.trace("Trying to transform JSON document to RDF.");
 
-			// Version 0.6.0
-			FacadeXGraphBuilder builder = new BaseFacadeXGraphBuilder("uploader", p);
-			jt.triplify(p, builder);
-			Graph g = builder.getDatasetGraph().getDefaultGraph();
-			m = ModelFactory.createModelForGraph(g);
+		// Version 0.6.0
+		FacadeXGraphBuilder builder = new BaseFacadeXGraphBuilder("uploader", p);
+		jt.triplify(p, builder);
+		Graph g = builder.getDatasetGraph().getDefaultGraph();
+		m.add(ModelFactory.createModelForGraph(g));
 
 //			m = ModelFactory
 //					.createModelForGraph(jt.triplify(p, new BaseFacadeXBuilder("uploader", p)).getDefaultGraph());
 
-			logger.trace("Read " + m.size() + " triples from JSON!");
-		}
+		logger.trace("Read " + m.size() + " triples from JSON!");
+//		}
 
 		return m;
 	}
 
-	public static Model triplifyFile(File file, String root) throws IOException,
-			TriplifierHTTPException, InstantiationException, IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+	public static Model triplifyFile(File file, String root) throws IOException, TriplifierHTTPException,
+			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, ClassNotFoundException {
 
 		Properties p = new Properties();
 		p.setProperty(IRIArgument.LOCATION.toString(), file.getAbsolutePath());
