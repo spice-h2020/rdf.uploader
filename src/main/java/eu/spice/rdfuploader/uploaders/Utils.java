@@ -72,8 +72,8 @@ public class Utils {
 		}
 
 		Model m = ModelFactory.createDefaultModel();
-		logger.trace("Reading as JSON-LD");
-		RDFDataMgr.read(m, new StringReader(obj.toString()), "", Lang.JSONLD);
+		logger.trace("Reading as JSON-LD {}", obj.toString());
+		RDFDataMgr.read(m, new StringReader(obj.toString()), "", Lang.JSONLD11);
 		logger.trace("Read " + m.size() + " triples from JSON-LD format!");
 //		if (m.size() == 0) {
 		logger.trace("Trying to transform JSON document to RDF.");
