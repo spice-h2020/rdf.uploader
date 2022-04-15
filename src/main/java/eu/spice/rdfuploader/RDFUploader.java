@@ -20,8 +20,11 @@ public class RDFUploader {
 
 	private static final Logger logger = LoggerFactory.getLogger(RDFUploader.class);
 
+	public static boolean testingMode = false;
+	public static BlockingQueue<Request> requests;
+
 	public static void main(String[] args) throws Exception {
-		
+
 		logger.info("SPICE RDF Publisher");
 		RDFUploaderConfiguration c;
 		if (args.length > 0) {
@@ -29,14 +32,20 @@ public class RDFUploader {
 		} else {
 			c = RDFUploaderConfiguration.getInstance();
 		}
-		
+
 		logger.info("Fake connection: IGNORE");
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(c.getRepositoryURL());
 		manager.close();
 		logger.info("Fake connection: END");
-		
-		
-		BlockingQueue<Request> requests = new LinkedBlockingQueue<>(c.getRequestQueueSize());
+
+		BlockingQueue<Request> requests;
+
+		if (testingMode) {
+			requests = new BlockingQueueListener<>(c.getRequestQueueSize());
+			RDFUploader.requests = requests;
+		} else {
+			requests = new LinkedBlockingQueue<>(c.getRequestQueueSize());
+		}
 
 		File tmpFolder = new File(c.getTmpFolder());
 		if (c.isClean() && tmpFolder.exists()) {
@@ -52,9 +61,8 @@ public class RDFUploader {
 		Thread t = new Thread(up);
 		t.start();
 		ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
-		ses.scheduleAtFixedRate(new ActivityLogWatchdog(
-				new RDFUploaderContext(c), requests), c.getInitalDealy(), c.getLookupRateSeconds(),
-				TimeUnit.SECONDS);
+		ses.scheduleAtFixedRate(new ActivityLogWatchdog(new RDFUploaderContext(c), requests), c.getInitalDealy(),
+				c.getLookupRateSeconds(), TimeUnit.SECONDS);
 		t.join();
 
 	}

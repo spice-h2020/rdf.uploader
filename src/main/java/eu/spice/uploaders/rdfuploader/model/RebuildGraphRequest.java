@@ -18,6 +18,7 @@ public class RebuildGraphRequest implements Request {
 	private RDFUploaderContext context;
 	private JSONObject job;
 	private String jobId;
+	private boolean accomplished = false;
 	private static final Logger logger = LoggerFactory.getLogger(RebuildGraphRequest.class);
 
 	public RebuildGraphRequest(String jobId, JSONObject job, RDFUploaderContext context) {
@@ -78,7 +79,20 @@ public class RebuildGraphRequest implements Request {
 			job.put(RDFJobsConstants.STATUS, RDFJobsConstants.ERROR);
 		}
 		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);
+		accomplished = true;
 
 	}
+
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
+	}
+
+	@Override
+	public String getDataset() {
+		return job.getString(RDFJobsConstants.DATASET);
+	}
+	
+	
 
 }

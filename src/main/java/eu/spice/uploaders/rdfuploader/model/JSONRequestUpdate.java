@@ -16,6 +16,7 @@ public class JSONRequestUpdate implements Request {
 	private RDFUploaderContext context;
 	private String datasetId, docId;
 	private final static Logger logger = LoggerFactory.getLogger(JSONRequestUpdate.class);
+	private boolean accomplished = false;
 
 	public JSONRequestUpdate(String datasetId, String docId, JSONObject payload, RDFUploaderContext context) {
 		this.payload = payload;
@@ -43,7 +44,7 @@ public class JSONRequestUpdate implements Request {
 		Model m = Utils.readOrTriplifyJSONObject(payload, root);
 		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, true);
 		logger.trace("Update Dataset Request - Accomplished");
-
+		accomplished = true;
 	}
 
 	@Override
@@ -58,5 +59,17 @@ public class JSONRequestUpdate implements Request {
 	public String getRepositoryURL() {
 		return context.getBlazegraphClient().getRepositoryURL();
 	}
+
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
+	}
+
+	@Override
+	public String getDataset() {
+		return datasetId;
+	}
+	
+	
 
 }

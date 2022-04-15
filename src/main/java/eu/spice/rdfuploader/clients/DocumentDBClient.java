@@ -1,5 +1,5 @@
 
-package eu.spice.rdfuploader;
+package eu.spice.rdfuploader.clients;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,7 +18,9 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
@@ -147,6 +149,83 @@ public class DocumentDBClient {
 			putRequest.setEntity(new StringEntity(newDocument.toString()));
 			HttpHost host = new HttpHost(apif_host);
 			HttpResponse response = client.execute(host, putRequest);
+			final HttpEntity resEntity = response.getEntity();
+			if (resEntity != null) {
+				logger.trace("Response content length: " + resEntity.getContentLength());
+				logger.trace(resEntity.toString());
+				logger.trace(new String(EntityUtils.toByteArray(resEntity)));
+			}
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		} catch (URISyntaxException e) {
+			logger.error(e.getMessage());
+		}
+
+	}
+	
+	public void createDocument(String datasetId, String documentId, JSONObject newDocument) {
+		logger.trace("Method createDocument invoked");
+
+		CredentialsProvider provider = new BasicCredentialsProvider();
+		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+		provider.setCredentials(AuthScope.ANY, credentials);
+		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
+		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
+
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath("/object/" + datasetId + "/" + documentId);
+
+		HttpPost  postRequest = new HttpPost();
+
+		try {
+			postRequest.setURI(builder.build());
+			postRequest.addHeader("Content-Type", "application/json");
+			postRequest.setConfig(requestConfig);
+			postRequest.setEntity(new StringEntity(newDocument.toString()));
+			HttpHost host = new HttpHost(apif_host);
+			HttpResponse response = client.execute(host, postRequest);
+			final HttpEntity resEntity = response.getEntity();
+			if (resEntity != null) {
+				logger.trace("Response content length: " + resEntity.getContentLength());
+				logger.trace(resEntity.toString());
+				logger.trace(new String(EntityUtils.toByteArray(resEntity)));
+			}
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		} catch (URISyntaxException e) {
+			logger.error(e.getMessage());
+		}
+
+	}
+	
+	
+	public void deleteDocument(String datasetId, String documentId) {
+		logger.trace("Method createDocument invoked");
+
+		CredentialsProvider provider = new BasicCredentialsProvider();
+		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+		provider.setCredentials(AuthScope.ANY, credentials);
+		HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+
+		logger.trace("HTTP client ready - auth configured");
+		RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT).setConnectTimeout(TIMEOUT)
+				.setConnectionRequestTimeout(TIMEOUT).build();
+
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath("/object/" + datasetId + "/" + documentId);
+
+		HttpDelete postRequest = new HttpDelete();
+
+		try {
+			postRequest.setURI(builder.build());
+			postRequest.addHeader("Content-Type", "application/json");
+			postRequest.setConfig(requestConfig);
+//			postRequest.setEntity(new StringEntity(newDocument.toString()));
+			HttpHost host = new HttpHost(apif_host);
+			HttpResponse response = client.execute(host, postRequest);
 			final HttpEntity resEntity = response.getEntity();
 			if (resEntity != null) {
 				logger.trace("Response content length: " + resEntity.getContentLength());

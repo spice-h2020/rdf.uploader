@@ -16,6 +16,7 @@ public class CreateFileRequest implements Request {
 	private String filename, dataset;
 	private RDFUploaderContext context;
 	private static final Logger logger = LoggerFactory.getLogger(ConstructRequest.class);
+	private boolean accomplished = false;
 
 	public CreateFileRequest(String filename, String dataset, RDFUploaderContext context) {
 		super();
@@ -52,7 +53,17 @@ public class CreateFileRequest implements Request {
 		logger.trace("File {} uploaded to namespace {} graphURI {}", filename, namespace, graphURI);
 		boolean r = downloadedFile.delete();
 		logger.trace("File {} deleted {}?", filename, r);
+		accomplished = true;
+	}
 
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
+	}
+
+	@Override
+	public String getDataset() {
+		return dataset;
 	}
 
 }

@@ -13,6 +13,7 @@ public class CreateNamespaceRequest implements Request {
 	private String datasetId;
 	private RDFUploaderContext context;
 	private final static Logger logger = LoggerFactory.getLogger(CreateNamespaceRequest.class);
+	private boolean accomplished=false;
 
 	public CreateNamespaceRequest(String datasetId, RDFUploaderContext context) {
 		super();
@@ -31,6 +32,7 @@ public class CreateNamespaceRequest implements Request {
 				Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath()));
 		manager.close();
 		logger.trace("Create Namespace Request.. accomplished");
+		accomplished = true;
 	}
 
 	@Override
@@ -40,6 +42,16 @@ public class CreateNamespaceRequest implements Request {
 
 	public String getTargetNamespace() {
 		return context.getBlazegraphNamespace(datasetId);
+	}
+
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
+	}
+
+	@Override
+	public String getDataset() {
+		return datasetId;
 	}
 
 }

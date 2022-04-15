@@ -16,6 +16,7 @@ public class JSONRequestCreate implements Request {
 	private String dataset, docId;
 	private RDFUploaderContext context;
 	private static final Logger logger = LoggerFactory.getLogger(JSONRequestCreate.class);
+	private boolean accomplished = false;
 
 	public JSONRequestCreate(String dataset, String docId, JSONObject payload, RDFUploaderContext context) {
 		this.payload = payload;
@@ -53,6 +54,7 @@ public class JSONRequestCreate implements Request {
 		}
 		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, false);
 		logger.trace("Create Graph Request - Accomplished");
+		accomplished = true;
 	}
 
 	@Override
@@ -66,6 +68,11 @@ public class JSONRequestCreate implements Request {
 
 	public String getRepositoryURL() {
 		return context.getBlazegraphClient().getRepositoryURL();
+	}
+
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
 	}
 
 }

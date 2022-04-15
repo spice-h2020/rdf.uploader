@@ -3,6 +3,10 @@ package eu.spice.rdfuploader;
 
 import java.io.IOException;
 
+import eu.spice.rdfuploader.clients.BlazegraphClient;
+import eu.spice.rdfuploader.clients.DocumentDBClient;
+import eu.spice.rdfuploader.clients.SPARQLAnythingClient;
+
 public class RDFUploaderContext {
 
 	private RDFUploaderConfiguration conf;

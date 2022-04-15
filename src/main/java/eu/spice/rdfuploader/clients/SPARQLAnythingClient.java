@@ -1,5 +1,5 @@
 
-package eu.spice.rdfuploader;
+package eu.spice.rdfuploader.clients;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.sparqlanything.engine.FacadeX;
+
+import eu.spice.rdfuploader.RDFUploaderConfiguration;
 
 public class SPARQLAnythingClient {
 

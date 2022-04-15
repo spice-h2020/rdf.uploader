@@ -20,6 +20,7 @@ public class ConstructRequest implements Request {
 	private JSONObject jobj;
 	private String docIdJob;
 	private RDFUploaderContext context;
+	private boolean accomplished = false;
 
 	private static final Logger logger = LoggerFactory.getLogger(ConstructRequest.class);
 
@@ -78,6 +79,8 @@ public class ConstructRequest implements Request {
 
 		}
 		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), docIdJob, jobj);
+
+		accomplished = true;
 	}
 
 	String getGraphURI() {
@@ -110,6 +113,16 @@ public class ConstructRequest implements Request {
 	@Override
 	public String getDocId() {
 		return docIdJob;
+	}
+
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
+	}
+
+	@Override
+	public String getDataset() {
+		return this.jobj.getString(RDFJobsConstants.DATASET);
 	}
 
 }

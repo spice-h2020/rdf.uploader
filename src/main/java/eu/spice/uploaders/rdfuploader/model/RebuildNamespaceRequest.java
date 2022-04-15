@@ -20,6 +20,7 @@ public class RebuildNamespaceRequest implements Request {
 	private RDFUploaderContext context;
 	private JSONObject job;
 	private String jobId;
+	private boolean accomplished = false;
 	private static final Logger logger = LoggerFactory.getLogger(RebuildNamespaceRequest.class);
 
 	public RebuildNamespaceRequest(String jobId, JSONObject job, RDFUploaderContext context) {
@@ -96,7 +97,18 @@ public class RebuildNamespaceRequest implements Request {
 		}
 
 		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);
+		accomplished = true;
 
+	}
+
+	@Override
+	public boolean isAccomplished() {
+		return accomplished;
+	}
+
+	@Override
+	public String getDataset() {
+		return job.getString(RDFJobsConstants.DATASET);
 	}
 
 }

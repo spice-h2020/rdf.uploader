@@ -1,5 +1,5 @@
 
-package eu.spice.rdfuploader;
+package eu.spice.rdfuploader.clients;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +24,7 @@ import com.bigdata.rdf.sail.webapp.SD;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 
+import eu.spice.rdfuploader.RDFUploaderConfiguration;
 import it.cnr.istc.stlab.lgu.commons.semanticweb.iterators.IteratorQuadFromTripleIterator;
 
 public class BlazegraphClient {

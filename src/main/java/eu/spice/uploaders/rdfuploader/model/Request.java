@@ -8,7 +8,11 @@ public interface Request {
 	public static UnicodeEscaper basicEscaper = new PercentEscaper("%", false);
 
 	public String getDocId();
+	
+	public String getDataset();
 
 	public void accomplishRequest() throws Exception;
+	
+	public boolean isAccomplished();
 
 }
