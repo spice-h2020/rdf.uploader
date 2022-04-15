@@ -139,13 +139,13 @@ public class RDFUploaderSandbox {
 		report.addAll(createAndDeleteJSONDocument(documentDBClient, requests, dataset_id, TEST_KEY, doc,
 				" xyz:attr \"attrValue\" . ", c));
 
-		doc = new JSONObject("{'_id':'test space','attr':'attrValue'}");
-		report.addAll(createAndDeleteJSONDocument(documentDBClient, requests, dataset_id, TEST_KEY, doc,
-				" xyz:attr \"attrValue\" . ", c));
-		
 		doc = new JSONObject("{'_id':'test space','attr with spaces':'attrValue'}");
 		report.addAll(createAndDeleteJSONDocument(documentDBClient, requests, dataset_id, TEST_KEY, doc,
 				" xyz:attr%20with%20spaces \"attrValue\" . ", c));
+
+		doc = new JSONObject("{'_id':'test space','dc:description':'attrValue'}");
+		report.addAll(createAndDeleteJSONDocument(documentDBClient, requests, dataset_id, TEST_KEY, doc,
+				" ; xyz:dc%3Adescription \"attrValue\" . [ <dc:description> \"attrValue\" ]  ", c));
 
 		System.err.println("\n\n\nREPORT\n\n\n");
 		for (String s : report) {
