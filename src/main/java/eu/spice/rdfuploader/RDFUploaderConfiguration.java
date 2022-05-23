@@ -55,9 +55,9 @@ public class RDFUploaderConfiguration {
 			clean = config.getBoolean("clean", false);
 			initialDelay = config.getInt("initialDelay", 30);
 			saQueryFilepath = config.getString("sa_query_filepath");
-			skipRDFJobs = config.getBoolean("skipRDFJobs");
+			skipRDFJobs = config.getBoolean("skipRDFJobs", false);
 			initialTimestamp = config.getInt("initialTimestamp", -1);
-			pagesize = config.getString("pagesize");
+			pagesize = config.getString("pagesize", "100");
 			disableWriting = config.getBoolean("disableWriting", false); 
 
 		} catch (ConfigurationException e) {
