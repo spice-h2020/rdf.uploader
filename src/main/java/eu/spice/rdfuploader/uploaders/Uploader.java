@@ -24,6 +24,8 @@ public class Uploader implements Runnable {
 			try {
 				logger.trace("Waiting for requests..");
 				Request request = requests.take();
+				logger.info("Accomplishing request ({}) on dataset {} docid {}", request.getClass().toString(),
+						request.getDataset(), request.getDocId());
 				logger.trace("Got request");
 				request.accomplishRequest();
 				logger.trace("Request accomplished");

@@ -17,11 +17,13 @@ public class RDFUploaderConfiguration {
 			blazegraphPropertiesFilepath = "src/main/resources/blazegraph.properties",
 			baseResource = "https://w3id.org/spice/resource/", baseGraph = baseResource + "graph/",
 			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder,
-			rdf_jobs_dataset, saQueryFilepath;
+			rdf_jobs_dataset, saQueryFilepath, pagesize;
 
-	private boolean useNamedresources = true, clean = false;
+	private boolean useNamedresources = true, clean = false, skipRDFJobs = false, disableWriting=false;
 
 	private int requestQueueSize = 100, lookupRateSeconds = 10, initialDelay = 30;
+
+	private int initialTimestamp = -1;
 
 	private static RDFUploaderConfiguration instance;
 
@@ -53,6 +55,10 @@ public class RDFUploaderConfiguration {
 			clean = config.getBoolean("clean", false);
 			initialDelay = config.getInt("initialDelay", 30);
 			saQueryFilepath = config.getString("sa_query_filepath");
+			skipRDFJobs = config.getBoolean("skipRDFJobs");
+			initialTimestamp = config.getInt("initialTimestamp", -1);
+			pagesize = config.getString("pagesize");
+			disableWriting = config.getBoolean("disableWriting", false); 
 
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
@@ -220,6 +226,22 @@ public class RDFUploaderConfiguration {
 
 	public String getSPARQLAnythingFilepath() {
 		return saQueryFilepath;
+	}
+
+	public boolean isSkipRDFJobs() {
+		return skipRDFJobs;
+	}
+
+	public int getInitialTimestamp() {
+		return initialTimestamp;
+	}
+
+	public String getPagesize() {
+		return pagesize;
+	}
+	
+	public boolean isDisableWriting() {
+		return disableWriting;
 	}
 
 }

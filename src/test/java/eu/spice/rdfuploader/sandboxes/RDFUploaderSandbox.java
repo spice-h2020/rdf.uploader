@@ -125,7 +125,7 @@ public class RDFUploaderSandbox {
 		createTestDataset(client, dataset_id, TEST_KEY);
 
 		DocumentDBClient documentDBClient = new DocumentDBClient(TEST_KEY, TEST_KEY, c.getApif_uri_scheme(),
-				c.getApif_host(), c.getActivity_log_path(), c.getBaseNS());
+				c.getApif_host(), c.getActivity_log_path(), c.getBaseNS(), c.getPagesize());
 
 		JSONObject doc = new JSONObject("{'_id':'id1','attr':'attrValue'}");
 		List<String> report = createAndDeleteJSONDocument(documentDBClient, requests, dataset_id, TEST_KEY, doc,

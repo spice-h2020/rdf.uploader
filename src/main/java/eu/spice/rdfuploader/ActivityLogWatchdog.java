@@ -72,6 +72,11 @@ public class ActivityLogWatchdog implements Runnable {
 		this.requests = requests;
 		this.context = context;
 		lastTimestampFile = context.getConf().getLastTimestampFile();
+		if (context.getConf().getInitialTimestamp() > 0) {
+			logger.info("Setting initial timestamp to {}", context.getConf().getInitialTimestamp());
+			saveLastTimestamp(context.getConf().getInitialTimestamp());
+		}
+
 	}
 
 	@Override
@@ -85,7 +90,7 @@ public class ActivityLogWatchdog implements Runnable {
 		}
 		logger.trace("Last timestamp {} number of requests {}", lastTimestamp, this.requests.size());
 		try {
-			logger.trace("Getting activity log entities from browse");
+			logger.info("Getting activity log entities from browse");
 			Model m = context.getDbClient().getActivityLogEntitiesFromBrowse(lastTimestamp);
 			logger.trace("Triples within the model {}", m.size());
 			QueryExecution qexec = QueryExecutionFactory.create(getLastOperationsQuery, m);
@@ -99,7 +104,7 @@ public class ActivityLogWatchdog implements Runnable {
 				String datasetIdentifier = qs.get("datasetId").asLiteral().getString();
 				Resource operationType = qs.get("operationType").asResource();
 				logger.trace("Request for the dataset {} - {}", datasetIdentifier, operationType);
-				if (datasetIdentifier.equals(context.getConf().getRDFJobsDataset())) {
+				if (datasetIdentifier.equals(context.getConf().getRDFJobsDataset()) && !context.isSkipRDFJobs()) {
 					if (!operationType.equals(CREATE_DATASET)) {
 						enqueueRDFJobRequest(qs, operationType);
 					}

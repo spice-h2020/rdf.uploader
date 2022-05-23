@@ -96,7 +96,10 @@ public class RebuildNamespaceRequest implements Request {
 			job.put(RDFJobsConstants.STATUS, RDFJobsConstants.ERROR);
 		}
 
-		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);
+		if (!context.isDisableWriting()) {
+			context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);
+		}
+		
 		accomplished = true;
 
 	}

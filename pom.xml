@@ -5,11 +5,11 @@
 
 	<groupId>eu.spice</groupId>
 	<artifactId>rdf.uploader</artifactId>
-	<version>0.3.4</version>
+	<version>0.3.5</version>
 	<packaging>jar</packaging>
 
 	<properties>
-		<sparqlanything.version>0.6.0</sparqlanything.version>
+		<sparqlanything.version>0.8.0-SNAPSHOT</sparqlanything.version>
 	</properties>
 
 	<build>

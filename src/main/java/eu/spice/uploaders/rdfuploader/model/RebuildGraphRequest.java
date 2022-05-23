@@ -78,7 +78,9 @@ public class RebuildGraphRequest implements Request {
 			Utils.addMessage(job, "Couldn't find document {}" + docId + " " + datasetId);
 			job.put(RDFJobsConstants.STATUS, RDFJobsConstants.ERROR);
 		}
-		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);
+		if (!context.isDisableWriting()) {
+			context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), jobId, job);
+		}
 		accomplished = true;
 
 	}
@@ -92,7 +94,5 @@ public class RebuildGraphRequest implements Request {
 	public String getDataset() {
 		return job.getString(RDFJobsConstants.DATASET);
 	}
-	
-	
 
 }

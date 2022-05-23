@@ -24,7 +24,7 @@ public class DocumentDBClientSandbox {
 				c.getApif_host());
 		createTestDataset(client);
 		DocumentDBClient documentDBClient = new DocumentDBClient(TEST_KEY, TEST_KEY, c.getApif_uri_scheme(),
-				c.getApif_host(), c.getActivity_log_path(), c.getBaseNS());
+				c.getApif_host(), c.getActivity_log_path(), c.getBaseNS(), c.getPagesize());
 		documentDBClient.createDocument(TEST_DATASET, "test_doc",
 				new JSONObject("{'_id':'test_doc', 'attr':'attrVal'}"));
 		documentDBClient.deleteDocument(TEST_DATASET, "test_doc");

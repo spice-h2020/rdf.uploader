@@ -16,7 +16,7 @@ public class RDFUploaderContext {
 
 	public RDFUploaderContext(RDFUploaderConfiguration conf) throws IOException {
 		this.dbClient = new DocumentDBClient(conf.getUsername(), conf.getPassword(), conf.getApif_uri_scheme(),
-				conf.getApif_host(), conf.getActivity_log_path(), conf.getBaseNS());
+				conf.getApif_host(), conf.getActivity_log_path(), conf.getBaseNS(), conf.getPagesize());
 		this.blazegraphClient = new BlazegraphClient(conf.getRepositoryURL(), conf.getBlazegraphNamespacePrefix());
 		this.conf = conf;
 		this.saClient = SPARQLAnythingClient.getInstance(conf);
@@ -62,6 +62,14 @@ public class RDFUploaderContext {
 
 	public SPARQLAnythingClient getSPARQLAnythingClient() {
 		return saClient;
+	}
+
+	public boolean isSkipRDFJobs() {
+		return conf.isSkipRDFJobs();
+	}
+	
+	public boolean isDisableWriting() {
+		return conf.isDisableWriting();
 	}
 
 }

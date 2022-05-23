@@ -39,11 +39,11 @@ import org.slf4j.LoggerFactory;
 public class DocumentDBClient {
 
 	private static final Logger logger = LoggerFactory.getLogger(DocumentDBClient.class);
-	private String username, password, apif_uri_scheme, apif_host, activity_log_path, baseNS;
+	private String username, password, apif_uri_scheme, apif_host, activity_log_path, baseNS, pagesize;
 	public static final int TIMEOUT = 10000;
 
 	public DocumentDBClient(String username, String password, String apif_uri_scheme, String apif_host,
-			String activity_log_path, String baseNS) {
+			String activity_log_path, String baseNS, String pagesize) {
 		super();
 		this.username = username;
 		this.password = password;
@@ -51,6 +51,7 @@ public class DocumentDBClient {
 		this.apif_host = apif_host;
 		this.activity_log_path = activity_log_path;
 		this.baseNS = baseNS;
+		this.pagesize = pagesize;
 	}
 
 	public Model getActivityLogEntitiesFromBrowse(Integer lastTimestamp) {
@@ -79,7 +80,9 @@ public class DocumentDBClient {
 						"{ \"$or\": [ {\"@type\":\"al:Create\"}, {\"@type\":\"al:Update\"}, {\"@type\":\"al:Delete\"}, {\"@type\":\"al:CreateDataset\"},  {\"@type\":\"al:CreateFile\"}]}");
 			}
 
-			builder.setParameter("pagesize", "100");
+			builder.setParameter("pagesize", pagesize);
+			
+			logger.debug("Query params {}", builder.getQueryParams());
 
 			int pageNumber = 1;
 			logger.trace("Start browsing");
@@ -100,21 +103,25 @@ public class DocumentDBClient {
 					sb.append(l);
 				}
 
-				JSONObject objectResponse = new JSONObject(sb.toString());
-				if (objectResponse.has("error")) {
-					logger.error(objectResponse.getString("error"));
-				}
-				logger.trace("Response content");
-				JSONArray results = objectResponse.getJSONArray("results");
+				try {
+					JSONObject objectResponse = new JSONObject(sb.toString());
+					if (objectResponse.has("error")) {
+						logger.error(objectResponse.getString("error"));
+					}
+					logger.trace("Response content");
+					JSONArray results = objectResponse.getJSONArray("results");
 
-				logger.debug("Document  count " + objectResponse.getInt("documentCount") + " Dimension results "
-						+ results.length());
-				if (results.length() > 0) {
-					RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
-				} else {
-					break;
+					logger.debug("Document  count {} Dimension results {} timestamp {}",
+							objectResponse.getInt("documentCount"), results.length(), lastTimestamp);
+					if (results.length() > 0) {
+						RDFDataMgr.read(m, new StringReader(results.toString()), baseNS, Lang.JSONLD);
+					} else {
+						break;
+					}
+					pageNumber++;
+				} catch (Exception e) {
+					logger.error("Retrieved from the activity log '{}'", sb.toString());
 				}
-				pageNumber++;
 			}
 
 		} catch (IOException | URISyntaxException e) {
@@ -162,7 +169,7 @@ public class DocumentDBClient {
 		}
 
 	}
-	
+
 	public void createDocument(String datasetId, String documentId, JSONObject newDocument) {
 		logger.trace("Method createDocument invoked");
 
@@ -178,7 +185,7 @@ public class DocumentDBClient {
 		URIBuilder builder = new URIBuilder();
 		builder.setScheme(apif_uri_scheme).setHost(apif_host).setPath("/object/" + datasetId + "/" + documentId);
 
-		HttpPost  postRequest = new HttpPost();
+		HttpPost postRequest = new HttpPost();
 
 		try {
 			postRequest.setURI(builder.build());
@@ -200,8 +207,7 @@ public class DocumentDBClient {
 		}
 
 	}
-	
-	
+
 	public void deleteDocument(String datasetId, String documentId) {
 		logger.trace("Method createDocument invoked");
 
@@ -360,7 +366,7 @@ public class DocumentDBClient {
 		if (resEntity != null) {
 			logger.trace("Response content length: " + resEntity.getContentLength());
 			String objString = new String(EntityUtils.toByteArray(resEntity));
-			//logger.trace("Result {}", objString);
+			// logger.trace("Result {}", objString);
 			FileOutputStream fos = new FileOutputStream(fileOut);
 			fos.write(objString.getBytes());
 			fos.flush();

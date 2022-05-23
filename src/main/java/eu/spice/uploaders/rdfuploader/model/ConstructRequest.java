@@ -78,7 +78,10 @@ public class ConstructRequest implements Request {
 			jobj.put(RDFJobsConstants.STATUS, RDFJobsConstants.ERROR);
 
 		}
-		context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), docIdJob, jobj);
+
+		if (!context.isDisableWriting()) {
+			context.getDbClient().updateDocument(context.getConf().getRDFJobsDataset(), docIdJob, jobj);
+		}
 
 		accomplished = true;
 	}

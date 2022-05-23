@@ -27,7 +27,7 @@ public class CreateFileRequest implements Request {
 
 	@Override
 	public String getDocId() {
-		return null;
+		return filename;
 	}
 
 	@Override

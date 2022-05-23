@@ -30,7 +30,7 @@ public class JSONRequestDelete implements Request {
 
 	@Override
 	public String getDocId() {
-		return null;
+		return docId;
 	}
 
 	public String getTargetNamespace() {

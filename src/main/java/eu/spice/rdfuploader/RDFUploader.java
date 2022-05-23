@@ -33,10 +33,10 @@ public class RDFUploader {
 			c = RDFUploaderConfiguration.getInstance();
 		}
 
-		logger.info("Fake connection: IGNORE");
+		logger.error("Fake connection: IGNORE");
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(c.getRepositoryURL());
 		manager.close();
-		logger.info("Fake connection: END");
+		logger.error("Fake connection: END");
 
 		BlockingQueue<Request> requests;
 
