@@ -5,7 +5,7 @@
 
 	<groupId>eu.spice</groupId>
 	<artifactId>rdf.uploader</artifactId>
-	<version>0.3.5</version>
+	<version>0.3.6</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -64,6 +64,12 @@
 										<exclude>META-INF/*.SF</exclude>
 										<exclude>META-INF/*.DSA</exclude>
 										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>**/*JMSAppender*</exclude>
 									</excludes>
 								</filter>
 							</filters>
@@ -286,6 +292,11 @@
 					<groupId>commons-beanutils</groupId>
 					<artifactId>commons-beanutils</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4</artifactId>
+				</exclusion>
+				
 			</exclusions>
 		</dependency>
 
