@@ -29,16 +29,12 @@ public class RebuildGraphRequest implements Request {
 	}
 
 	public String getTargetNamespace() {
-		return context.getBlazegraphNamespace(job.getString(RDFJobsConstants.DATASET));
+		return context.getNamespace(job.getString(RDFJobsConstants.DATASET));
 	}
 
 	@Override
 	public String getDocId() {
 		return jobId;
-	}
-
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
 	}
 
 	@Override
@@ -55,15 +51,11 @@ public class RebuildGraphRequest implements Request {
 			logger.trace("Triplifying document");
 			Model m;
 			try {
-//				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentId),
-//						context.getOntologyURIPrefix(datasetId, documentId));
 				m = Utils.readOrTriplifyJSONObject(obj, context.getRootURI(datasetId, documentIdClean));
 				logger.trace("Model size: {}", m.size());
 				logger.trace("Clearing and uploading model");
 				String graphURI = context.getGraphURI(datasetId, documentIdClean);
-				Properties blazegraphProperties = Utils
-						.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
-				context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, blazegraphProperties,
+				context.getTripleStoreClient().uploadModel(m, getTargetNamespace(), graphURI,
 						true);
 				job.put(Constants.RDFJobsConstants.STATUS, Constants.RDFJobsConstants.COMPLETE);
 				logger.trace("Request accomplished");

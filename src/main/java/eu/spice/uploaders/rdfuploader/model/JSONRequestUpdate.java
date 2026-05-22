@@ -1,7 +1,5 @@
 package eu.spice.uploaders.rdfuploader.model;
 
-import java.util.Properties;
-
 import org.apache.jena.rdf.model.Model;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -40,9 +38,9 @@ public class JSONRequestUpdate implements Request {
 		String root = context.getRootURI(datasetId, docIdClean);
 //		String ontologyPrefix = context.getOntologyURIPrefix(datasetId, docId);
 		String graphURI = context.getGraphURI(datasetId, docIdClean);
-		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
+//		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 		Model m = Utils.readOrTriplifyJSONObject(payload, root);
-		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, true);
+		context.getTripleStoreClient().uploadModel(m, getTargetNamespace(), graphURI, true);
 		logger.trace("Update Dataset Request - Accomplished");
 		accomplished = true;
 	}
@@ -53,11 +51,7 @@ public class JSONRequestUpdate implements Request {
 	}
 
 	public String getTargetNamespace() {
-		return context.getBlazegraphNamespace(datasetId);
-	}
-
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
+		return context.getNamespace(datasetId);
 	}
 
 	@Override

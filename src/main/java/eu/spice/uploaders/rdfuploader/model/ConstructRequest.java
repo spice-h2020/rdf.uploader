@@ -1,14 +1,10 @@
 
 package eu.spice.uploaders.rdfuploader.model;
 
-import java.util.Properties;
-
 import org.apache.jena.rdf.model.Model;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 
 import eu.spice.rdfuploader.Constants;
 import eu.spice.rdfuploader.Constants.RDFJobsConstants;
@@ -35,10 +31,6 @@ public class ConstructRequest implements Request {
 		return jobj.getString(RDFJobsConstants.TARGET_NAMESPACE);
 	}
 
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
-	}
-
 	@Override
 	public void accomplishRequest() throws Exception {
 
@@ -48,12 +40,11 @@ public class ConstructRequest implements Request {
 
 		try {
 
-			String namespace = context.getBlazegraphNamespace(jobj.getString(RDFJobsConstants.DATASET));
-			Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
+			String namespace = context.getNamespace(jobj.getString(RDFJobsConstants.DATASET));
 
 			// Executing query
 			logger.trace("Executing query");
-			Model m = context.getBlazegraphClient().executeConstructQuery(query, namespace);
+			Model m = context.getTripleStoreClient().executeConstructQuery(query, namespace);
 			logger.trace("Number of triples generated {}", m.size());
 
 			// Minting graphURI
@@ -61,13 +52,13 @@ public class ConstructRequest implements Request {
 			logger.trace("Target named graph {}", graphURI);
 
 			// Checking if the target namespace exists
-			checkNamespaceExists(namespace, namespaceProperties);
+			checkNamespaceExists(namespace);
 
 			// Clear target graph if requested
-			checkClearGraph(graphURI, namespace, namespaceProperties);
+			checkClearGraph(graphURI, namespace);
 
 			// Uploading
-			context.getBlazegraphClient().uploadModel(m, namespace, graphURI, namespaceProperties);
+			context.getTripleStoreClient().uploadModel(m, namespace, graphURI, false);
 
 			jobj.put(RDFJobsConstants.STATUS, RDFJobsConstants.COMPLETE);
 
@@ -96,20 +87,17 @@ public class ConstructRequest implements Request {
 		return graphURI;
 	}
 
-	void checkNamespaceExists(String namespace, Properties namespaceProperties) throws Exception {
-		if (!context.getBlazegraphClient().namespaceExists(namespace)) {
+	void checkNamespaceExists(String namespace) throws Exception {
+		if (!context.getTripleStoreClient().namespaceExists(namespace)) {
 			logger.trace("Namespace {} doesn't exist.. creating it", namespace);
-			RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
-			this.context.getBlazegraphClient().createAndGetRemoteRepositoryForNamespace(manager, namespace,
-					namespaceProperties);
-			manager.close();
+			context.getTripleStoreClient().createNamespace(namespace);
 		}
 	}
 
-	void checkClearGraph(String graphURI, String namespace, Properties namespaceProperties) throws Exception {
+	void checkClearGraph(String graphURI, String namespace) throws Exception {
 		if (jobj.getBoolean(RDFJobsConstants.CLEAR_GRAPH)) {
 			logger.trace("Clearing graph");
-			this.context.getBlazegraphClient().clearGraph(namespace, namespaceProperties, graphURI);
+			this.context.getTripleStoreClient().clearGraph(namespace, graphURI);
 		}
 	}
 

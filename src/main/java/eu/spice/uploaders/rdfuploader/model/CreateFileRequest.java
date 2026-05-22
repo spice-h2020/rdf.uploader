@@ -2,8 +2,6 @@
 package eu.spice.uploaders.rdfuploader.model;
 
 import java.io.File;
-import java.util.Properties;
-
 import org.apache.jena.rdf.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +32,8 @@ public class CreateFileRequest implements Request {
 	public void accomplishRequest() throws Exception {
 		String filenameClean = basicEscaper.escape(filename);
 		String root = context.getRootURI(dataset, filenameClean);
-//		String ontologyPrefix = context.getOntologyURIPrefix(dataset, filename);
 		String graphURI = context.getGraphURI(dataset, filenameClean);
-		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
-		String namespace = context.getBlazegraphNamespace(dataset);
+		String namespace = context.getNamespace(dataset);
 
 		// Downloading file
 		File tempFolderDataset = Utils.makeTempFolderForDataset(context.getConf().getTmpFolder(), dataset);
@@ -48,7 +44,7 @@ public class CreateFileRequest implements Request {
 		Model m = context.getSPARQLAnythingClient().triplifyFile(downloadedFile.getAbsolutePath(), root);
 
 		// Upload file
-		context.getBlazegraphClient().uploadModel(m, namespace, graphURI, namespaceProperties, true);
+		context.getTripleStoreClient().uploadModel(m, namespace, graphURI, true);
 
 		logger.trace("File {} uploaded to namespace {} graphURI {}", filename, namespace, graphURI);
 		boolean r = downloadedFile.delete();

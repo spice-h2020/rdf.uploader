@@ -11,8 +11,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
-
 import eu.spice.rdfuploader.uploaders.Uploader;
 import eu.spice.uploaders.rdfuploader.model.Request;
 
@@ -34,8 +32,8 @@ public class RDFUploader {
 		}
 
 		logger.error("Fake connection: IGNORE");
-		RemoteRepositoryManager manager = new RemoteRepositoryManager(c.getRepositoryURL());
-		manager.close();
+		RDFUploaderContext context = new RDFUploaderContext(c);
+		context.getTripleStoreClient().testConnection();
 		logger.error("Fake connection: END");
 
 		BlockingQueue<Request> requests;
@@ -61,7 +59,7 @@ public class RDFUploader {
 		Thread t = new Thread(up);
 		t.start();
 		ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
-		ses.scheduleAtFixedRate(new ActivityLogWatchdog(new RDFUploaderContext(c), requests), c.getInitalDealy(),
+		ses.scheduleAtFixedRate(new ActivityLogWatchdog(context, requests), c.getInitalDealy(),
 				c.getLookupRateSeconds(), TimeUnit.SECONDS);
 		t.join();
 

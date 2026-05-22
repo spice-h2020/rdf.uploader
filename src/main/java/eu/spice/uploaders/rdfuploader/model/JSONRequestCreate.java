@@ -1,7 +1,5 @@
 package eu.spice.uploaders.rdfuploader.model;
 
-import java.util.Properties;
-
 import org.apache.jena.rdf.model.Model;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -44,15 +42,13 @@ public class JSONRequestCreate implements Request {
 	public void accomplishRequest() throws Exception {
 		String docIdClean = basicEscaper.escape(docId);
 		String root = context.getRootURI(dataset, docIdClean);
-//		String ontologyPrefix = context.getOntologyURIPrefix(dataset, docId);
 		String graphURI = context.getGraphURI(dataset, docIdClean);
-		Properties namespaceProperties = Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 		Model m = Utils.readOrTriplifyJSONObject(payload, root);
 		logger.trace("Triplified Model contains {} triples", m.size());
 		if (logger.isTraceEnabled()) {
 			m.write(System.out, "TTL");
 		}
-		context.getBlazegraphClient().uploadModel(m, getTargetNamespace(), graphURI, namespaceProperties, false);
+		context.getTripleStoreClient().uploadModel(m, getTargetNamespace(), graphURI, false);
 		logger.trace("Create Graph Request - Accomplished");
 		accomplished = true;
 	}
@@ -63,11 +59,7 @@ public class JSONRequestCreate implements Request {
 	}
 
 	public String getTargetNamespace() {
-		return context.getBlazegraphNamespace(dataset);
-	}
-
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
+		return context.getNamespace(dataset);
 	}
 
 	@Override

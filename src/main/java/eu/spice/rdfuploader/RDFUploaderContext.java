@@ -1,4 +1,3 @@
-
 package eu.spice.rdfuploader;
 
 import java.io.IOException;
@@ -6,20 +5,34 @@ import java.io.IOException;
 import eu.spice.rdfuploader.clients.BlazegraphClient;
 import eu.spice.rdfuploader.clients.DocumentDBClient;
 import eu.spice.rdfuploader.clients.SPARQLAnythingClient;
+import eu.spice.rdfuploader.clients.TripleStoreClient;
 
 public class RDFUploaderContext {
 
 	private RDFUploaderConfiguration conf;
 	private DocumentDBClient dbClient;
-	private BlazegraphClient blazegraphClient;
+	private TripleStoreClient tripleStoreClient;
 	private SPARQLAnythingClient saClient;
 
 	public RDFUploaderContext(RDFUploaderConfiguration conf) throws IOException {
 		this.dbClient = new DocumentDBClient(conf.getUsername(), conf.getPassword(), conf.getApif_uri_scheme(),
 				conf.getApif_host(), conf.getActivity_log_path(), conf.getBaseNS(), conf.getPagesize());
-		this.blazegraphClient = new BlazegraphClient(conf.getRepositoryURL(), conf.getBlazegraphNamespacePrefix());
+		this.tripleStoreClient = createTripleStoreClient(conf);
 		this.conf = conf;
 		this.saClient = SPARQLAnythingClient.getInstance(conf);
+	}
+
+	private TripleStoreClient createTripleStoreClient(RDFUploaderConfiguration conf) {
+		String backend = conf.getBackend();
+		switch (backend) {
+			case "blazegraph":
+				return new BlazegraphClient(conf.getRepositoryURL(), conf.getBlazegraphNamespacePrefix(),
+						conf.getBlazegraphPropertiesFilepath());
+			case "virtuoso":
+				throw new UnsupportedOperationException("Virtuoso backend not yet implemented");
+			default:
+				throw new IllegalArgumentException("Unknown backend: " + backend);
+		}
 	}
 
 	public RDFUploaderConfiguration getConf() {
@@ -30,11 +43,11 @@ public class RDFUploaderContext {
 		return dbClient;
 	}
 
-	public BlazegraphClient getBlazegraphClient() {
-		return blazegraphClient;
+	public TripleStoreClient getTripleStoreClient() {
+		return tripleStoreClient;
 	}
 
-	public String getBlazegraphNamespace(String datasetIdentifier) {
+	public String getNamespace(String datasetIdentifier) {
 		return conf.getBlazegraphNamespacePrefix() + datasetIdentifier;
 	}
 
@@ -67,9 +80,8 @@ public class RDFUploaderContext {
 	public boolean isSkipRDFJobs() {
 		return conf.isSkipRDFJobs();
 	}
-	
+
 	public boolean isDisableWriting() {
 		return conf.isDisableWriting();
 	}
-
 }

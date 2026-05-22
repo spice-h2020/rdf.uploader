@@ -3,10 +3,7 @@ package eu.spice.uploaders.rdfuploader.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
-
 import eu.spice.rdfuploader.RDFUploaderContext;
-import eu.spice.rdfuploader.uploaders.Utils;
 
 public class CreateNamespaceRequest implements Request {
 
@@ -21,16 +18,9 @@ public class CreateNamespaceRequest implements Request {
 		this.context = context;
 	}
 
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
-	}
-
 	public void accomplishRequest() throws Exception {
 		logger.debug("Create Namespace Request");
-		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
-		this.context.getBlazegraphClient().createAndGetRemoteRepositoryForNamespace(manager, getTargetNamespace(),
-				Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath()));
-		manager.close();
+		this.context.getTripleStoreClient().createNamespace(getTargetNamespace());
 		logger.trace("Create Namespace Request.. accomplished");
 		accomplished = true;
 	}
@@ -41,7 +31,7 @@ public class CreateNamespaceRequest implements Request {
 	}
 
 	public String getTargetNamespace() {
-		return context.getBlazegraphNamespace(datasetId);
+		return context.getNamespace(datasetId);
 	}
 
 	@Override

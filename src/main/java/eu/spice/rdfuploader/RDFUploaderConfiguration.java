@@ -17,7 +17,7 @@ public class RDFUploaderConfiguration {
 			blazegraphPropertiesFilepath = "src/main/resources/blazegraph.properties",
 			baseResource = "https://w3id.org/spice/resource/", baseGraph = baseResource + "graph/",
 			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder,
-			rdf_jobs_dataset, saQueryFilepath, pagesize;
+			rdf_jobs_dataset, saQueryFilepath, pagesize, backend = "blazegraph";
 
 	private boolean useNamedresources = true, clean = false, skipRDFJobs = false, disableWriting=false;
 
@@ -58,8 +58,8 @@ public class RDFUploaderConfiguration {
 			skipRDFJobs = config.getBoolean("skipRDFJobs", false);
 			initialTimestamp = config.getInt("initialTimestamp", -1);
 			pagesize = config.getString("pagesize", "100");
-			disableWriting = config.getBoolean("disableWriting", false); 
-
+			disableWriting = config.getBoolean("disableWriting", false);
+			backend = config.getString("backend", "blazegraph");
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
 		}
@@ -244,4 +244,7 @@ public class RDFUploaderConfiguration {
 		return disableWriting;
 	}
 
+	public String getBackend() {
+		return backend;
+	}
 }

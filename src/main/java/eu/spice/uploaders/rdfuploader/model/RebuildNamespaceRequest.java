@@ -1,15 +1,11 @@
 
 package eu.spice.uploaders.rdfuploader.model;
 
-import java.util.Properties;
-
 import org.apache.jena.rdf.model.Model;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 
 import eu.spice.rdfuploader.Constants.RDFJobsConstants;
 import eu.spice.rdfuploader.RDFUploaderContext;
@@ -31,7 +27,7 @@ public class RebuildNamespaceRequest implements Request {
 	}
 
 	public String getTargetNamespace() {
-		return context.getBlazegraphNamespace(job.getString(RDFJobsConstants.DATASET));
+		return context.getNamespace(job.getString(RDFJobsConstants.DATASET));
 	}
 
 	@Override
@@ -39,31 +35,22 @@ public class RebuildNamespaceRequest implements Request {
 		return jobId;
 	}
 
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
-	}
-
 	@Override
 	public void accomplishRequest() {
-
-		String namespace = context.getBlazegraphNamespace(job.getString(RDFJobsConstants.DATASET));
+		String namespace = context.getNamespace(job.getString(RDFJobsConstants.DATASET));
 
 		logger.trace("Dropping namespace {}", namespace);
 		try {
 			// Drop existing namespace
-			context.getBlazegraphClient().dropNamespace(namespace);
+			context.getTripleStoreClient().dropNamespace(namespace);
 			Utils.addMessage(job, "Namespace deleted");
 
 			// Recreate namespace
-			RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
-			context.getBlazegraphClient().createAndGetRemoteRepositoryForNamespace(repo, namespace,
-					Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath()));
+			context.getTripleStoreClient().createNamespace(namespace);
 			Utils.addMessage(job, "Namespace created");
 
 			// Retrieve documents
 			JSONArray documents = context.getDbClient().retrieveDocuments(job.getString(RDFJobsConstants.DATASET));
-			final Properties blazegraphProperties = Utils
-					.loadProperties(context.getConf().getBlazegraphPropertiesFilepath());
 
 			// Triplify and upload documents
 			documents.forEach(obj -> {
@@ -78,7 +65,7 @@ public class RebuildNamespaceRequest implements Request {
 
 				try {
 					Model m = Utils.readOrTriplifyJSONObject((JSONObject) obj, rootURI);
-					context.getBlazegraphClient().uploadModel(m, namespace, graphURI, blazegraphProperties);
+					context.getTripleStoreClient().uploadModel(m, namespace, graphURI, false);
 					Utils.addMessage(job, documentId + " uploaded");
 				} catch (Exception e) {
 					logger.error("Error while processing job {}", e.getMessage());

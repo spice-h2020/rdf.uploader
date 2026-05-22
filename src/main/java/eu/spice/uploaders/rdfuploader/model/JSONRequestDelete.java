@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.spice.rdfuploader.RDFUploaderContext;
-import eu.spice.rdfuploader.uploaders.Utils;
 
 public class JSONRequestDelete implements Request {
 
@@ -22,8 +21,7 @@ public class JSONRequestDelete implements Request {
 	public void accomplishRequest() throws Exception {
 		logger.debug("CLEAR graph " + context.getGraphURI(datasetId, docId));
 		String docIdClean = basicEscaper.escape(docId);
-		context.getBlazegraphClient().clearGraph(getTargetNamespace(),
-				Utils.loadProperties(context.getConf().getBlazegraphPropertiesFilepath()),
+		context.getTripleStoreClient().clearGraph(getTargetNamespace(),
 				context.getGraphURI(datasetId, docIdClean));
 		accomplished = true;
 	}
@@ -34,11 +32,7 @@ public class JSONRequestDelete implements Request {
 	}
 
 	public String getTargetNamespace() {
-		return context.getBlazegraphNamespace(datasetId);
-	}
-
-	public String getRepositoryURL() {
-		return context.getBlazegraphClient().getRepositoryURL();
+		return context.getNamespace(datasetId);
 	}
 
 	@Override

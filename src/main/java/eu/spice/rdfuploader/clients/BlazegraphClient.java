@@ -1,9 +1,9 @@
-
 package eu.spice.rdfuploader.clients;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.jena.query.Query;
@@ -25,19 +25,28 @@ import com.bigdata.rdf.sail.webapp.client.RemoteRepository;
 import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 
 import eu.spice.rdfuploader.RDFUploaderConfiguration;
+import eu.spice.rdfuploader.uploaders.Utils;
 import it.cnr.istc.stlab.lgu.commons.semanticweb.iterators.IteratorQuadFromTripleIterator;
 
-public class BlazegraphClient {
+public class BlazegraphClient implements TripleStoreClient {
 
 	private String repositoryURL;
-
-	public BlazegraphClient(String repositoryURL, String blazegraphNamespacePrefix) {
-		super();
-		this.repositoryURL = repositoryURL;
-	}
+	private String namespacePropertiesFilepath;
 
 	private static final Logger logger = LoggerFactory.getLogger(BlazegraphClient.class);
 
+	public BlazegraphClient(String repositoryURL, String blazegraphNamespacePrefix,
+	                        String namespacePropertiesFilepath) {
+		super();
+		this.repositoryURL = repositoryURL;
+		this.namespacePropertiesFilepath = namespacePropertiesFilepath;
+	}
+
+	private Properties loadNamespaceProperties() throws IOException {
+		return Utils.loadProperties(namespacePropertiesFilepath);
+	}
+
+	@Override
 	public Model executeConstructQuery(String query, String namespace) {
 		Query q = QueryFactory.create(query);
 		String sparqlEndpointURL = repositoryURL + "/namespace/" + namespace + "/sparql";
@@ -46,13 +55,9 @@ public class BlazegraphClient {
 		return qexec.execConstruct();
 	}
 
-	public void uploadModel(Model m, String namespace, String graphURI, Properties namespaceProperties)
-			throws Exception {
-		uploadModel(m, namespace, graphURI, namespaceProperties, false);
-	}
-
-	public void uploadModel(Model m, String namespace, String graphURI, Properties namespaceProperties,
-			boolean clearGraph) throws Exception {
+	@Override
+	public void uploadModel(Model m, String namespace, String graphURI, boolean clearGraph) throws Exception {
+		Properties namespaceProperties = loadNamespaceProperties();
 		logger.trace("Creating Repository manager for URL {}", this.getRepositoryURL());
 		try {
 			RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
@@ -87,6 +92,7 @@ public class BlazegraphClient {
 		return repositoryURL;
 	}
 
+	@Override
 	public boolean namespaceExists(String namespace) throws Exception {
 		RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
 		boolean result = namespaceExists(repo, namespace);
@@ -94,6 +100,7 @@ public class BlazegraphClient {
 		return result;
 	}
 
+	@Override
 	public boolean dropNamespace(String namespace) throws Exception {
 		RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
 		boolean result = namespaceExists(repo, namespace);
@@ -121,8 +128,15 @@ public class BlazegraphClient {
 		return false;
 	}
 
-	public RemoteRepository createAndGetRemoteRepositoryForNamespace(RemoteRepositoryManager manager, String namespace,
-			Properties namespaceProperties) throws Exception {
+	@Override
+	public void createNamespace(String namespace) throws Exception {
+		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
+		createAndGetRemoteRepositoryForNamespace(manager, namespace, loadNamespaceProperties());
+		manager.close();
+	}
+
+	private RemoteRepository createAndGetRemoteRepositoryForNamespace(RemoteRepositoryManager manager, String namespace,
+	                                                                  Properties namespaceProperties) throws Exception {
 		logger.trace("Create " + namespace + " namepsace.");
 		if (!namespaceExists(manager, namespace)) {
 			manager.createRepository(namespace, namespaceProperties);
@@ -130,12 +144,13 @@ public class BlazegraphClient {
 		} else {
 			logger.trace("Namespace " + namespace + " already exists!");
 		}
-
 		logger.trace("Namespace " + namespace + " created!");
 		return manager.getRepositoryForNamespace(namespace);
 	}
 
-	public void clearGraph(String namespace, Properties properties, String graphURI) throws Exception {
+	@Override
+	public void clearGraph(String namespace, String graphURI) throws Exception {
+		Properties properties = loadNamespaceProperties();
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
 		RemoteRepository rr = createAndGetRemoteRepositoryForNamespace(manager, namespace, properties);
 		rr.prepareUpdate("CLEAR GRAPH <" + graphURI + ">").evaluate();
@@ -143,11 +158,14 @@ public class BlazegraphClient {
 		manager.close();
 	}
 
-//	public void dropAllNamespaces() throws Exception {
-//		RemoteRepositoryManager repo = new RemoteRepositoryManager(this.getRepositoryURL());
-//		GraphQueryResult gqr = repo.getRepositoryDescriptions();
-//		Map<String, String> namespaces = gqr.getNamespaces();
-//		namespaces.forEach((k, v) -> System.out.println(k + " " + v));
-//	}
+	@Override
+	public void testConnection() throws Exception {
+		RemoteRepositoryManager manager = new RemoteRepositoryManager(this.getRepositoryURL());
+		manager.close();
+	}
 
+	@Override
+	public void close() throws Exception {
+		// No long-lived resources held; nothing to close.
+	}
 }
