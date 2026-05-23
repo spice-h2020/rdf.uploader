@@ -17,7 +17,8 @@ public class RDFUploaderConfiguration {
 			blazegraphPropertiesFilepath = "src/main/resources/blazegraph.properties",
 			baseResource = "https://w3id.org/spice/resource/", baseGraph = baseResource + "graph/",
 			ontologyURIPRefix = "https://w3id.org/spice/ontology/", blazegraphNamespacePrefix = "", tmpFolder,
-			rdf_jobs_dataset, saQueryFilepath, pagesize, backend = "blazegraph";
+			rdf_jobs_dataset, saQueryFilepath, pagesize, backend = "blazegraph", virtuosoJdbcUrl, virtuosoUser,
+			virtuosoPassword;
 
 	private boolean useNamedresources = true, clean = false, skipRDFJobs = false, disableWriting=false;
 
@@ -60,6 +61,9 @@ public class RDFUploaderConfiguration {
 			pagesize = config.getString("pagesize", "100");
 			disableWriting = config.getBoolean("disableWriting", false);
 			backend = config.getString("backend", "blazegraph");
+			virtuosoJdbcUrl = config.getString("virtuosoJdbcUrl", null);
+			virtuosoUser = config.getString("virtuosoUser", null);
+			virtuosoPassword = config.getString("virtuosoPassword", null);
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
 		}
@@ -246,5 +250,16 @@ public class RDFUploaderConfiguration {
 
 	public String getBackend() {
 		return backend;
+	}
+	public String getVirtuosoJdbcUrl() {
+		return virtuosoJdbcUrl;
+	}
+
+	public String getVirtuosoUser() {
+		return virtuosoUser;
+	}
+
+	public String getVirtuosoPassword() {
+		return virtuosoPassword;
 	}
 }

@@ -6,6 +6,7 @@ import eu.spice.rdfuploader.clients.BlazegraphClient;
 import eu.spice.rdfuploader.clients.DocumentDBClient;
 import eu.spice.rdfuploader.clients.SPARQLAnythingClient;
 import eu.spice.rdfuploader.clients.TripleStoreClient;
+import eu.spice.rdfuploader.clients.VirtuosoClient;
 
 public class RDFUploaderContext {
 
@@ -29,7 +30,12 @@ public class RDFUploaderContext {
 				return new BlazegraphClient(conf.getRepositoryURL(), conf.getBlazegraphNamespacePrefix(),
 						conf.getBlazegraphPropertiesFilepath());
 			case "virtuoso":
-				throw new UnsupportedOperationException("Virtuoso backend not yet implemented");
+				if (conf.getVirtuosoJdbcUrl() == null || conf.getVirtuosoUser() == null
+						|| conf.getVirtuosoPassword() == null) {
+					throw new IllegalStateException(
+							"backend=virtuoso requires virtuosoJdbcUrl, virtuosoUser and virtuosoPassword in config");
+				}
+				return new VirtuosoClient(conf.getVirtuosoJdbcUrl(), conf.getVirtuosoUser(), conf.getVirtuosoPassword());
 			default:
 				throw new IllegalArgumentException("Unknown backend: " + backend);
 		}
